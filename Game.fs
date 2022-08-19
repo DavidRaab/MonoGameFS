@@ -1,4 +1,4 @@
-namespace myGame
+namespace MyGame
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input

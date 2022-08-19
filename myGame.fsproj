@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <Compile Include="Game.fs" />
+    <Compile Include="Fps.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
