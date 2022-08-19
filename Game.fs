@@ -7,26 +7,31 @@ module GamePad =
     let isPressed state =
         state = ButtonState.Pressed
 
-type Game1(init, loadContent, update, draw) as this =
+type Game1<'Model>(init, loadContent, update, draw) as this =
     inherit Game()
-    let _graphics            = new GraphicsDeviceManager(this)
-    let mutable _spriteBatch = Unchecked.defaultof<SpriteBatch>
-    do
-        this.Content.RootDirectory <- "Content"
-        this.IsMouseVisible <- true
+    let graphics            = new GraphicsDeviceManager(this)
+    let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
+    let mutable model       = Unchecked.defaultof<'Model>
+
+    member this.Graphics = graphics
 
     override this.Initialize () =
-        init ()
+        model <- init this
         base.Initialize ()
 
     override this.LoadContent () =
-        _spriteBatch <- new SpriteBatch(this.GraphicsDevice)
-        loadContent ()
+        spriteBatch <- new SpriteBatch(this.GraphicsDevice)
+        loadContent this
 
     override this.Update(gameTime) =
-        update this gameTime
+        model <- update model gameTime this
         base.Update gameTime
 
     override this.Draw gameTime =
-        draw this gameTime
+        draw model gameTime this
         base.Draw gameTime
+
+    member this.SetResolution x y =
+        graphics.PreferredBackBufferWidth  <- x
+        graphics.PreferredBackBufferHeight <- y
+        graphics.ApplyChanges ()
