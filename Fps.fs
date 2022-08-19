@@ -1,8 +1,6 @@
 namespace MyGame
 open System
 open Microsoft.Xna.Framework
-open Microsoft.Xna.Framework.Graphics
-open Microsoft.Xna.Framework.Input
 
 type FPS = {
     mutable Frames:      int
@@ -17,19 +15,16 @@ module FPS =
         FPS         = fps
     }
 
+    // Global State
     let state =
         create 0 (TimeSpan 0) 0.0
 
-    let increment time =
+    // Called on each update
+    let update (gameTime:GameTime) =
         state.Frames      <- state.Frames + 1
-        state.ElapsedTime <- state.ElapsedTime + time
+        state.ElapsedTime <- state.ElapsedTime + gameTime.ElapsedGameTime
 
-    let calculateFps () =
         if state.ElapsedTime.TotalSeconds >= 1.0 then
             state.FPS         <- float state.Frames / state.ElapsedTime.TotalSeconds
             state.Frames      <- 0
             state.ElapsedTime <- TimeSpan 0
-
-    let updateFps (gameTime:GameTime) =
-        increment gameTime.ElapsedGameTime
-        calculateFps ()

@@ -20,7 +20,7 @@ module App =
         ()
 
     let update (model:Model) (gameTime:GameTime) (game:MyGame) =
-        FPS.updateFps gameTime
+        FPS.update gameTime
         printfn "%A" FPS.state
 
         let gamePad  = GamePad.GetState PlayerIndex.One
