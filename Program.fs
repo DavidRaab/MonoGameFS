@@ -72,12 +72,14 @@ module App =
             Color.White
         )
 
+        FPS.draw game.Asset.Font.Default game.spriteBatch
+
         game.spriteBatch.DrawString(
             game.Asset.Font.Default,
-            "This is the text to be displayed",
+            "Hello, World!",
             Vector2(100f, 100f),
             Color.White
-        );
+        )
 
     // Run MonoGame Application
     [<EntryPoint;STAThread>]

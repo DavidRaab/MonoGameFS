@@ -1,6 +1,7 @@
 namespace MyGame
 open System
 open Microsoft.Xna.Framework
+open Microsoft.Xna.Framework.Graphics
 
 type FPS = {
     mutable Frames:      int
@@ -28,3 +29,12 @@ module FPS =
             state.FPS         <- float state.Frames / state.ElapsedTime.TotalSeconds
             state.Frames      <- 0
             state.ElapsedTime <- TimeSpan 0
+
+    let draw font (sb:SpriteBatch) =
+        sb.DrawString(
+            font,
+            String.Format("FPS: {0:0.00}", state.FPS),
+            Vector2(0f, 0f),
+            Color.Yellow
+        )
+
