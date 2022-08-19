@@ -5,9 +5,9 @@ open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 
 type FPS = {
-    Frames:      int
-    ElapsedTime: TimeSpan
-    FPS:         float
+    mutable Frames:      int
+    mutable ElapsedTime: TimeSpan
+    mutable FPS:         float
 }
 
 module FPS =
@@ -21,13 +21,16 @@ module FPS =
         create 0 (TimeSpan 0) 0.0
 
     let increment time fps =
-        create (fps.Frames + 1) (fps.ElapsedTime + time) fps.FPS
+        fps.Frames      <- fps.Frames + 1
+        fps.ElapsedTime <- fps.ElapsedTime + time
+        fps
 
     let calculateFps fps =
         if fps.ElapsedTime.TotalSeconds >= 1.0 then
-            create 0 (TimeSpan 0) (float fps.Frames / fps.ElapsedTime.TotalSeconds)
-        else
-            fps
+            fps.FPS         <- float fps.Frames / fps.ElapsedTime.TotalSeconds
+            fps.Frames      <- 0
+            fps.ElapsedTime <- TimeSpan 0
+        fps
 
     let updateFps time fps =
         calculateFps (increment time fps)
