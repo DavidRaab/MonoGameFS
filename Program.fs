@@ -11,6 +11,7 @@ type Fonts = {
 
 type Textures = {
     Background: Texture2D
+    WhiteBox:   Texture2D
 }
 
 type Assets = {
@@ -30,24 +31,31 @@ let init (game:MyGame) =
     game.SetResolution 854 480
     GameState.create ()
 
-let loadContent (game:MyGame) = {
+
+let loadContent (game:MyGame) =
+    let whiteBox = new Texture2D(game.GraphicsDevice, 10, 10)
+    whiteBox.SetData(Array.replicate 100 Color.White)
+    Rectangles.loadContent ()
+    {
         Font = {
             Default = game.Content.Load<SpriteFont>("Font")
         }
         Texture = {
             Background = game.Content.Load<Texture2D>("example")
+            WhiteBox   = whiteBox
         }
     }
 
+
 let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
-    //printfn "%A" FPS.state
+    Rectangles.update gameTime
 
     let gamePad  = GamePad.GetState PlayerIndex.One
     let keyboard = Keyboard.GetState ()
 
     // Vibration through Triggers
-    printfn "%f %f" gamePad.Triggers.Left gamePad.Triggers.Right
+    // printfn "%f %f" gamePad.Triggers.Left gamePad.Triggers.Right
     GamePad.SetVibration(0,
         gamePad.Triggers.Left,
         gamePad.Triggers.Right
@@ -64,7 +72,9 @@ let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
 
     model
 
+
 let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
+    game.GraphicsDevice.Clear(Color.CornflowerBlue)
     let width, height = game.GetResolution ()
 
     game.spriteBatch.Draw(
@@ -73,13 +83,19 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
         Color.White
     )
 
+    Rectangles.draw game.Asset.Texture.WhiteBox game.spriteBatch
     FPS.draw game.Asset.Font.Default game.spriteBatch
 
     game.spriteBatch.DrawString(
-        game.Asset.Font.Default,
-        "Hello, World!",
-        Vector2(100f, 100f),
-        Color.White
+        spriteFont = game.Asset.Font.Default,
+        text       = "Hello, World!",
+        position   = Vector2(100f, 100f),
+        color      = Color.White,
+        rotation   = 0f,
+        origin     = Vector2.Zero,
+        scale      = Vector2.One,
+        effects    = SpriteEffects.None,
+        layerDepth = 0f
     )
 
 
@@ -87,6 +103,8 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
 [<EntryPoint;STAThread>]
 let main argv =
     using (new Game1<Assets,GameState>(init, loadContent, update, draw)) (fun game ->
+        // game.Graphics.SynchronizeWithVerticalRetrace <- false
+        // game.IsFixedTimeStep <- false
         game.Content.RootDirectory <- "Content"
         game.IsMouseVisible        <- true
         game.Run()
