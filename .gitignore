@@ -3,3 +3,6 @@ bin/
 obj/
 
 .fake
+
+# gedit temp files
+*~
