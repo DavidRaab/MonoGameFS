@@ -4,35 +4,42 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 type FPS = {
-    mutable Frames:      int
+    mutable Updates:     int
+    mutable Draws:       int
     mutable ElapsedTime: TimeSpan
-    mutable FPS:         float
+    mutable UpdateFPS:   float
+    mutable DrawFPS:     float
 }
 
-let create frames time fps = {
-    Frames      = frames
+let create updates draws time ufps dfps = {
+    Updates     = updates
+    Draws       = draws
     ElapsedTime = time
-    FPS         = fps
+    UpdateFPS   = ufps
+    DrawFPS     = dfps
 }
 
 // Global State
 let state =
-    create 0 (TimeSpan 0) 0.0
+    create 0 0 TimeSpan.Zero 0.0 0.0
 
 // Called on each update
 let update (gameTime:GameTime) =
-    state.Frames      <- state.Frames + 1
+    state.Updates     <- state.Updates + 1
     state.ElapsedTime <- state.ElapsedTime + gameTime.ElapsedGameTime
 
-    if state.ElapsedTime.TotalSeconds >= 1.0 then
-        state.FPS         <- float state.Frames / state.ElapsedTime.TotalSeconds
-        state.Frames      <- 0
-        state.ElapsedTime <- TimeSpan 0
+    if state.ElapsedTime >= TimeSpan.oneSecond then
+        state.UpdateFPS   <- float state.Updates / state.ElapsedTime.TotalSeconds
+        state.DrawFPS     <- float state.Draws   / state.ElapsedTime.TotalSeconds
+        state.Updates     <- 0
+        state.Draws       <- 0
+        state.ElapsedTime <- TimeSpan.Zero
 
 let draw font (sb:SpriteBatch) =
+    state.Draws <- state.Draws + 1
     sb.DrawString(
         spriteFont = font,
-        text       = String.Format("FPS: {0:0.00}", state.FPS),
+        text       = String.Format("Update/Draw: {0:0.00} {1:0.00}", state.UpdateFPS, state.DrawFPS),
         position   = Vector2(3f, 3f),
         color      = Color.Yellow,
         rotation   = 0f,
