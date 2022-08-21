@@ -11,6 +11,7 @@ type Fonts = {
 
 type Textures = {
     Background: Texture2D
+    Pixel:      Texture2D
     WhiteBox:   Texture2D
 }
 
@@ -26,30 +27,34 @@ module GameState =
 
 type MyGame = Game1<Assets,GameState>
 
-
 let init (game:MyGame) =
     game.SetResolution 854 480
     GameState.create ()
 
 
 let loadContent (game:MyGame) =
-    let whiteBox = new Texture2D(game.GraphicsDevice, 10, 10)
-    whiteBox.SetData(Array.replicate 100 Color.White)
-    Rectangles.loadContent ()
-    {
+    let gd = game.GraphicsDevice
+    let assets = {
         Font = {
             Default = game.Content.Load<SpriteFont>("Font")
         }
         Texture = {
             Background = game.Content.Load<Texture2D>("example")
-            WhiteBox   = whiteBox
+            WhiteBox   = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
+            Pixel      = Texture2D.create gd 1 1 [|Color.White|]
         }
     }
+
+    //Rectangles.loadContent ()
+    Collision.loadContent assets.Texture.Pixel
+
+    assets
 
 
 let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
-    Rectangles.update gameTime
+    //Rectangles.update gameTime
+    Collision.update gameTime
 
     let gamePad  = GamePad.GetState PlayerIndex.One
     let keyboard = Keyboard.GetState ()
@@ -83,8 +88,19 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
         Color.White
     )
 
-    Rectangles.draw game.Asset.Texture.WhiteBox game.spriteBatch
+    game.spriteBatch.Draw(
+        game.Asset.Texture.Pixel,
+        Rectangle(50,50, 450, 300),
+        Color.White
+    )
+
+    //Rectangles.draw game.Asset.Texture.Background game.spriteBatch
     FPS.draw game.Asset.Font.Default game.spriteBatch
+
+    for draw in Collision.draw () do
+        match draw with
+        | Collision.Draw (tex,rect,color) ->
+            game.spriteBatch.Draw(tex,rect,color)
 
     game.spriteBatch.DrawString(
         spriteFont = game.Asset.Font.Default,
@@ -103,8 +119,9 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
 [<EntryPoint;STAThread>]
 let main argv =
     using (new Game1<Assets,GameState>(init, loadContent, update, draw)) (fun game ->
-        // game.Graphics.SynchronizeWithVerticalRetrace <- false
-        // game.IsFixedTimeStep <- false
+        game.Graphics.SynchronizeWithVerticalRetrace <- true
+        game.IsFixedTimeStep       <- true
+        game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
         game.Content.RootDirectory <- "Content"
         game.IsMouseVisible        <- true
         game.Run()

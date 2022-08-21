@@ -1,0 +1,42 @@
+module MyGame.Collision
+open System
+open Microsoft.Xna.Framework
+open Microsoft.Xna.Framework.Graphics
+
+type Box = {
+    Texture:  Texture2D
+    mutable Position: Vector2
+    Size:     Point
+    Color:    Color
+    LeftX:    int
+    RightX:   int
+    mutable Movement: Vector2
+}
+
+let mutable state = Unchecked.defaultof<Box>
+
+let loadContent tex =
+    state <- {
+        Texture  = tex
+        Position = Vector2(50f,100f)
+        Size     = Point(50,30)
+        Color    = Color.Red
+        LeftX    = 50
+        RightX   = 500
+        Movement = Vector2(500f,0f)
+    }
+
+let update (gameTime:GameTime) =
+    let rect = Rectangle(Vector2.toPoint state.Position, state.Size)
+    if rect.Right > state.RightX then
+        state.Movement <- Vector2(-500f,0f)
+    elif rect.Left < state.LeftX then
+        state.Movement <- Vector2(500f,0f)
+    state.Position <- state.Position + Vector2.Multiply (state.Movement, gameTime.ElapsedGameTime)
+
+type Draw =
+    | Draw of Texture2D * Rectangle * Color
+
+let draw () = [
+    Draw(state.Texture, Rectangle(state.Position.ToPoint(),state.Size), state.Color)
+]

@@ -8,7 +8,7 @@ type Rect = {
     mutable Color:    Color
 }
 
-let create pos color =
+let inline create pos color =
     { Position = pos; Color = color }
 
 let state = ResizeArray<Rect>()
@@ -27,4 +27,8 @@ let update (gameTime:GameTime) =
 
 let draw tex (sb:SpriteBatch) =
     for rect in state do
-        sb.Draw(tex, rect.Position + Vector2(float32 FPS.state.Frames, 0f), rect.Color)
+        sb.Draw(
+            tex,
+            Rectangle(int rect.Position.X + FPS.state.Draws, int rect.Position.Y, 10, 10),
+            rect.Color
+        )
