@@ -18,6 +18,7 @@ type Textures = {
 type Assets = {
     Font:    Fonts
     Texture: Textures
+    Rects:   ResizeArray<RectangleOO>
 }
 
 type GameState = GameState
@@ -33,6 +34,12 @@ let init (game:MyGame) =
 
 
 let loadContent (game:MyGame) =
+    let rects = ResizeArray<_>()
+    let yOffset = 0f
+    for x=1 to 75 do
+        for y=1 to 40 do
+            rects.Add (RectangleOO (Vector2 (float32 x * 11f, float32 y * 11f + yOffset), Color.White))
+
     let gd = game.GraphicsDevice
     let assets = {
         Font = {
@@ -43,9 +50,10 @@ let loadContent (game:MyGame) =
             WhiteBox   = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
             Pixel      = Texture2D.create gd 1 1 [|Color.White|]
         }
+        Rects = rects
     }
 
-    //Rectangles.loadContent ()
+    Rectangles.loadContent ()
     Collision.loadContent assets.Texture.Pixel
 
     assets
@@ -53,11 +61,14 @@ let loadContent (game:MyGame) =
 
 let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
-    //Rectangles.update gameTime
+    Rectangles.update gameTime
     Collision.update gameTime
 
     let gamePad  = GamePad.GetState PlayerIndex.One
     let keyboard = Keyboard.GetState ()
+
+    // for rect in game.Asset.Rects do
+    //     rect.Update()
 
     // Vibration through Triggers
     // printfn "%f %f" gamePad.Triggers.Left gamePad.Triggers.Right
@@ -88,11 +99,10 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
         Color.White
     )
 
-    game.spriteBatch.Draw(
-        game.Asset.Texture.Pixel,
-        Rectangle(50,50, 450, 300),
-        Color.White
-    )
+    Rectangles.draw game.Asset.Texture.Pixel game.spriteBatch
+
+    // for rect in game.Asset.Rects do
+    //     rect.Draw(game.Asset.Texture.Background, game.spriteBatch)
 
     //Rectangles.draw game.Asset.Texture.Background game.spriteBatch
     FPS.draw game.Asset.Font.Default game.spriteBatch

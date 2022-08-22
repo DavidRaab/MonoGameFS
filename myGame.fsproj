@@ -32,6 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.fs" />
+    <Compile Include="Classes.fs" />
     <Compile Include="Fps.fs" />
     <Compile Include="Rectangle.fs" />
     <Compile Include="Collision.fs" />
