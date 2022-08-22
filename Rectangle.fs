@@ -8,16 +8,17 @@ type Rect = {
     mutable Color:    Color
 }
 
-let inline create pos color =
-    { Position = pos; Color = color }
+module Rect =
+    let inline create pos color =
+        { Position = pos; Color = color }
 
 let state = ResizeArray<Rect>()
 
 let loadContent () =
-    let yOffset = 0f
+    let yOffset = 20f
     for x=1 to 75 do
         for y=1 to 40 do
-            state.Add (create (Vector2 (float32 x * 11f, float32 y * 11f + yOffset)) Color.White)
+            state.Add (Rect.create (Vector2 (float32 x * 11f, float32 y * 11f + yOffset)) Color.White)
 
 let update (gameTime:GameTime) =
     // let red   = Color.DarkRed.ToVector3 ()
@@ -29,6 +30,6 @@ let draw tex (sb:SpriteBatch) =
     for rect in state do
         sb.Draw(
             tex,
-            Rectangle(int rect.Position.X + FPS.state.Draws, int rect.Position.Y, 10, 10),
+            Rectangle(int rect.Position.X, int rect.Position.Y, 10, 10),
             rect.Color
         )
