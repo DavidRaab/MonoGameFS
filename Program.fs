@@ -104,10 +104,9 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
     // for rect in game.Asset.Rects do
     //     rect.Draw(game.Asset.Texture.Background, game.spriteBatch)
 
-    //Rectangles.draw game.Asset.Texture.Background game.spriteBatch
     FPS.draw game.Asset.Font.Default game.spriteBatch
 
-    for draw in Collision.draw () do
+    for draw in Collision.draw game.Asset.Texture.Pixel do
         match draw with
         | Collision.Draw (tex,rect,color) ->
             game.spriteBatch.Draw(tex,rect,color)

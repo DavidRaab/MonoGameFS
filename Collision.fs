@@ -13,6 +13,10 @@ type Box = {
     mutable Movement: Vector2
 }
 
+module Box =
+    let getRect box =
+        Rectangle(Vector2.toPoint box.Position, box.Size)
+
 let mutable state = Unchecked.defaultof<Box>
 
 let loadContent tex =
@@ -21,13 +25,15 @@ let loadContent tex =
         Position = Vector2(50f,100f)
         Size     = Point(50,30)
         Color    = Color.Red
-        LeftX    = 50
-        RightX   = 500
+        LeftX    = 0
+        RightX   = 854
         Movement = Vector2(500f,0f)
     }
 
+let whiteBox = Rectangle(50,50,300,300)
+
 let update (gameTime:GameTime) =
-    let rect = Rectangle(Vector2.toPoint state.Position, state.Size)
+    let rect = Box.getRect state
     if rect.Right > state.RightX then
         state.Movement <- Vector2(-500f,0f)
     elif rect.Left < state.LeftX then
@@ -37,6 +43,10 @@ let update (gameTime:GameTime) =
 type Draw =
     | Draw of Texture2D * Rectangle * Color
 
-let draw () = [
+let draw tex = [|
+    if whiteBox.Intersects (Box.getRect state)
+    then Draw(tex, whiteBox, Color.Aquamarine)
+    else Draw(tex, whiteBox, Color.White)
+
     Draw(state.Texture, Rectangle(state.Position.ToPoint(),state.Size), state.Color)
-]
+|]
