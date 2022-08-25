@@ -32,6 +32,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.fs" />
+    <Compile Include="DataTypes.fs" />
+    <Compile Include="Components.fs" />
+    <Compile Include="GameState.fs" />
+    <Compile Include="Entity.fs" />
+    <Compile Include="Systems.fs" />
+
     <Compile Include="Classes.fs" />
     <Compile Include="Fps.fs" />
     <Compile Include="Rectangle.fs" />

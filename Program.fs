@@ -56,11 +56,18 @@ let loadContent (game:MyGame) =
     Rectangles.loadContent ()
     Collision.loadContent assets.Texture.Pixel
 
+    // ECS System
+    let box = Component.Entity.create ()
+    Component.Position.add (Vector2(50f,50f)) box
+    Component.View.add assets.Texture.WhiteBox box
+
     assets
 
 
 let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
+
+    (*
     Rectangles.update gameTime
     Collision.update gameTime
 
@@ -85,12 +92,18 @@ let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
 
     if GamePad.isPressed gamePad.Buttons.Back || keyboard.IsKeyDown Keys.Escape then
         game.Exit()
+    *)
 
     model
 
 
 let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
+    FPS.draw game.Asset.Font.Default game.spriteBatch
+    Systems.View.draw game.spriteBatch
+
+
+    (*
     let width, height = game.GetResolution ()
 
     game.spriteBatch.Draw(
@@ -104,7 +117,6 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
     // for rect in game.Asset.Rects do
     //     rect.Draw(game.Asset.Texture.Background, game.spriteBatch)
 
-    FPS.draw game.Asset.Font.Default game.spriteBatch
 
     for draw in Collision.draw game.Asset.Texture.Pixel do
         match draw with
@@ -122,6 +134,7 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
         effects    = SpriteEffects.None,
         layerDepth = 0f
     )
+    *)
 
 
 // Run MonoGame Application
