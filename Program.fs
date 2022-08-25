@@ -21,19 +21,23 @@ type Assets = {
     Rects:   ResizeArray<RectangleOO>
 }
 
-type GameState = GameState
-
-module GameState =
-    let create () = GameState
+// Model
+type GameState = {
+    Box:       Entity
+    MovingBox: Entity
+}
 
 type MyGame = Game1<Assets,GameState>
 
 let init (game:MyGame) =
+    game.Graphics.SynchronizeWithVerticalRetrace <- true
+    game.IsFixedTimeStep       <- true
+    game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
+    game.Content.RootDirectory <- "Content"
+    game.IsMouseVisible        <- true
     game.SetResolution 854 480
-    GameState.create ()
 
-
-let loadContent (game:MyGame) =
+let loadAssets (game:MyGame) =
     let rects = ResizeArray<_>()
     let yOffset = 0f
     for x=1 to 75 do
@@ -56,16 +60,50 @@ let loadContent (game:MyGame) =
     Rectangles.loadContent ()
     Collision.loadContent assets.Texture.Pixel
 
+    assets
+
+let initModel assets =
     // ECS System
     let box = Component.Entity.create ()
     Component.Position.add (Vector2(50f,50f)) box
     Component.View.add assets.Texture.WhiteBox box
 
-    assets
+    let movingBox = Component.Entity.create ()
+    Component.Position.add (Vector2(100f,50f)) movingBox
+    Component.View.add assets.Texture.WhiteBox movingBox
+
+    let gameState = {
+        Box       = box
+        MovingBox = movingBox
+    }
+
+    gameState
 
 
 let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
+    Systems.Movement.update gameTime
+
+
+    let keyboard = Keyboard.GetState ()
+    if keyboard.IsKeyDown Keys.Space then
+        Component.Movement.add (Vector2(50f,0f)) model.MovingBox
+
+    if keyboard.IsKeyDown Keys.Escape then
+        Component.Movement.delete model.MovingBox
+
+    if keyboard.IsKeyDown Keys.Right then
+        Component.Position.get model.MovingBox |> Option.iter (fun pos ->
+            let pos = pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime)
+            Component.Position.update pos model.MovingBox
+        )
+
+    if keyboard.IsKeyDown Keys.Left then
+        Component.Position.get model.MovingBox |> Option.iter (fun pos ->
+            let pos = pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime)
+            Component.Position.update pos model.MovingBox
+        )
+
 
     (*
     Rectangles.update gameTime
@@ -140,12 +178,7 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
 // Run MonoGame Application
 [<EntryPoint;STAThread>]
 let main argv =
-    using (new Game1<Assets,GameState>(init, loadContent, update, draw)) (fun game ->
-        game.Graphics.SynchronizeWithVerticalRetrace <- true
-        game.IsFixedTimeStep       <- true
-        game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
-        game.Content.RootDirectory <- "Content"
-        game.IsMouseVisible        <- true
+    using (new Game1<Assets,GameState>(init, loadAssets, initModel, update, draw)) (fun game ->
         game.Run()
     )
     1

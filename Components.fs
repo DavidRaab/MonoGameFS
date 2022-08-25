@@ -35,23 +35,47 @@ module Position =
     let get search =
         Seq.tryFind (fun pos -> entity pos = search) state
 
+    let update pos e =
+        match Seq.tryFindIndex (fun p -> entity p = e) state with
+        | None     -> add pos e
+        | Some idx -> state.[idx] <- create pos e
+
+
 module View =
     let create sprite e =
         {View.Entity = e; Sprite = sprite }
 
-    let entity (v:View) =
-        v.Entity
-
-    let sprite (v:View) =
-        v.Sprite
+    let entity (v:View) = v.Entity
+    let sprite (v:View) = v.Sprite
 
     // State Handling
     let state = ResizeArray<View>()
 
-    let add sprite entity =
-        state.Add({Entity = entity; Sprite = sprite })
+    let add sprite e =
+        state.Add (create sprite e)
 
     let get search =
         Seq.tryFind (fun v -> entity v = search) state
 
+module Movement =
+    let create dir e =
+        { Entity = e; Direction = dir }
 
+    let entity    (m:Movement) = m.Entity
+    let direction (m:Movement) = m.Direction
+
+    // State Handling
+    let mutable state = ResizeArray<Movement>()
+
+    let add dir e =
+        state.Add (create dir e)
+
+    let get search =
+        Seq.tryFind (fun m -> entity m = search) state
+
+    let delete search =
+        let newA = ResizeArray<Movement>()
+        for s in state do
+            if s.Entity <> search then
+                newA.Add s
+        state <- newA

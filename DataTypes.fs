@@ -14,3 +14,8 @@ type View = {
     Entity : Entity
     Sprite : Texture2D
 }
+
+type Movement = {
+    Entity    : Entity
+    Direction : Vector2
+}

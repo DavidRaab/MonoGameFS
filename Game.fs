@@ -7,7 +7,7 @@ module GamePad =
     let isPressed state =
         state = ButtonState.Pressed
 
-type Game1<'Assets,'GameState>(init, loadContent, update, draw) as this =
+type Game1<'Assets,'GameState>(init, loadAssets, initModel, update, draw) as this =
     inherit Game()
     let graphics       = new GraphicsDeviceManager(this)
     let mutable sb     = Unchecked.defaultof<SpriteBatch>
@@ -19,12 +19,13 @@ type Game1<'Assets,'GameState>(init, loadContent, update, draw) as this =
     member this.spriteBatch = sb
 
     override this.Initialize () =
-        model <- init this
+        init this
         base.Initialize ()
 
     override this.LoadContent () =
         sb     <- new SpriteBatch(this.GraphicsDevice)
-        assets <- loadContent this
+        assets <- loadAssets this
+        model  <- initModel assets
 
     override this.Update(gameTime) =
         model <- update model gameTime this
