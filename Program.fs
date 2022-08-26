@@ -100,15 +100,15 @@ let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
         Component.Movement.delete model.MovingBox
 
     if keyboard.IsKeyDown Keys.Right then
-        Component.Position.get model.MovingBox |> Option.iter (fun pos ->
+        Component.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime)
-            Component.Position.update pos model.MovingBox
+            Component.Position.add pos model.MovingBox
         )
 
     if keyboard.IsKeyDown Keys.Left then
-        Component.Position.get model.MovingBox |> Option.iter (fun pos ->
+        Component.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime)
-            Component.Position.update pos model.MovingBox
+            Component.Position.add pos model.MovingBox
         )
 
 

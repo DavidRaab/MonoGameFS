@@ -1,7 +1,8 @@
 module MyGame.Component
-open System
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
+
+type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
 
 module Entity =
     let mutable private counter = 0
@@ -17,65 +18,49 @@ module Entity =
         entities :> seq<Entity>
 
 module Position =
-    let create pos entity =
-        {Entity = entity; Position = pos }
+    let create pos =
+        {Position = pos }
 
-    let entity (p:Position) =
-        p.Entity
-
-    let position (p:Position) =
-        p.Position
+    let position (p:Position) = p.Position
 
     // State Handling
-    let state = ResizeArray<Position>()
+    let state = Dictionary<Entity,Position>()
 
     let add pos entity =
-        state.Add (create pos entity)
+        Dictionary.add entity (create pos) state
 
     let get search =
-        Seq.tryFind (fun pos -> entity pos = search) state
-
-    let update pos e =
-        match Seq.tryFindIndex (fun p -> entity p = e) state with
-        | None     -> add pos e
-        | Some idx -> state.[idx] <- create pos e
-
+        Dictionary.find search state
 
 module View =
-    let create sprite e =
-        {View.Entity = e; Sprite = sprite }
+    let create sprite =
+        {Sprite = sprite }
 
-    let entity (v:View) = v.Entity
     let sprite (v:View) = v.Sprite
 
     // State Handling
-    let state = ResizeArray<View>()
+    let state = Dictionary<Entity,View>()
 
-    let add sprite e =
-        state.Add (create sprite e)
+    let add sprite entity =
+        Dictionary.add entity (create sprite) state
 
     let get search =
-        Seq.tryFind (fun v -> entity v = search) state
+        Dictionary.find search state
 
 module Movement =
-    let create dir e =
-        { Entity = e; Direction = dir }
+    let create dir =
+        { Direction = dir }
 
-    let entity    (m:Movement) = m.Entity
     let direction (m:Movement) = m.Direction
 
     // State Handling
-    let mutable state = ResizeArray<Movement>()
+    let mutable state = Dictionary<Entity,Movement>()
 
-    let add dir e =
-        state.Add (create dir e)
+    let add dir entity =
+        Dictionary.add entity (create dir) state
 
-    let get search =
-        Seq.tryFind (fun m -> entity m = search) state
+    let get entity =
+        Dictionary.find entity state
 
-    let delete search =
-        let newA = ResizeArray<Movement>()
-        for s in state do
-            if s.Entity <> search then
-                newA.Add s
-        state <- newA
+    let delete entity =
+        state.Remove(entity) |> ignore

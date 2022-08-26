@@ -8,8 +8,8 @@ module View =
     let draw (sb:SpriteBatch) =
         // sb.Begin()
         for e in Component.Entity.all () do
-            Component.Position.get e |> Option.iter (fun pos ->
-            Component.View.get e     |> Option.iter (fun view ->
+            Component.Position.get e |> ValueOption.iter (fun pos ->
+            Component.View.get e     |> ValueOption.iter (fun view ->
                 sb.Draw(view.Sprite, pos.Position, Color.White)
             ))
         // sb.End()
@@ -18,8 +18,8 @@ module View =
 module Movement =
     let update (gameTime:GameTime) =
         for e in Component.Entity.all () do
-            Component.Position.get e |> Option.iter (fun pos ->
-            Component.Movement.get e |> Option.iter (fun mov ->
+            Component.Position.get e |> ValueOption.iter (fun pos ->
+            Component.Movement.get e |> ValueOption.iter (fun mov ->
                 let newPos = pos.Position + (mov.Direction * float32 gameTime.ElapsedGameTime.TotalSeconds)
-                Component.Position.update newPos e
+                Component.Position.add newPos e
             ))
