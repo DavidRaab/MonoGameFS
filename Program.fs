@@ -30,8 +30,8 @@ type GameState = {
 type MyGame = Game1<Assets,GameState>
 
 let init (game:MyGame) =
-    game.Graphics.SynchronizeWithVerticalRetrace <- true
-    game.IsFixedTimeStep       <- true
+    game.Graphics.SynchronizeWithVerticalRetrace <- false
+    game.IsFixedTimeStep       <- false
     game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
     game.Content.RootDirectory <- "Content"
     game.IsMouseVisible        <- true
@@ -71,6 +71,13 @@ let initModel assets =
     let movingBox = Component.Entity.create ()
     Component.Position.add (Vector2(100f,50f)) movingBox
     Component.View.add assets.Texture.WhiteBox movingBox
+
+    let yOffset = 20f
+    for x=1 to 75 do
+        for y=1 to 40 do
+            let e = Component.Entity.create ()
+            Component.Position.add (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)) e
+            Component.View.add     (assets.Texture.WhiteBox) e
 
     let gameState = {
         Box       = box

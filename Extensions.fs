@@ -15,6 +15,8 @@ module Extensions =
         let oneSecond = TimeSpan.FromSeconds(1.0)
 
     type Vector2 with
+        static member create (x:float32) (y:float32) =
+            Vector2(x,y)
         static member Multiply (left:Vector2, right:TimeSpan) =
             Vector2.Multiply(left, float32 right.TotalSeconds)
         static member toPoint (vec:Vector2) =
