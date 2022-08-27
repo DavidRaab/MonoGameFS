@@ -6,3 +6,6 @@ obj/
 
 # gedit temp files
 *~
+
+# VSCode
+*.code-workspace
