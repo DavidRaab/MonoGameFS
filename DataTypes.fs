@@ -1,9 +1,9 @@
-namespace MyGame
-open System
+namespace MyGame.DataTypes
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-type Entity = Entity of int
+type Entity =
+    Entity of int
 
 type Position = {
     Position : Vector2

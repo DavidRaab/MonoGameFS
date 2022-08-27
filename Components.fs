@@ -1,4 +1,6 @@
-module MyGame.Component
+namespace MyGame.Components
+open MyGame.Extensions
+open MyGame.DataTypes
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 

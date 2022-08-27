@@ -1,9 +1,9 @@
 namespace MyGame
-open System
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-open System.Collections.Generic
+type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
+type TimeSpan          = System.TimeSpan
 
 [<AutoOpen>]
 module Extensions =
@@ -24,7 +24,7 @@ module Extensions =
         static member toPoint (vec:Vector2) =
             vec.ToPoint ()
 
-    type Dictionary<'a,'b> with
+    type System.Collections.Generic.Dictionary<'a,'b> with
         static member add key value (dic:Dictionary<'a,'b>) =
             if   dic.ContainsKey(key)
             then dic.[key] <- value

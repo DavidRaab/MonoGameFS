@@ -37,11 +37,7 @@
     <Compile Include="GameState.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Systems.fs" />
-
-    <Compile Include="Classes.fs" />
     <Compile Include="Fps.fs" />
-    <Compile Include="Rectangle.fs" />
-    <Compile Include="Collision.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

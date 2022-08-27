@@ -1,5 +1,6 @@
 module MyGame.App
-open System
+open MyGame.DataTypes
+open MyGame.Components
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
@@ -18,7 +19,6 @@ type Textures = {
 type Assets = {
     Font:    Fonts
     Texture: Textures
-    Rects:   ResizeArray<RectangleOO>
 }
 
 // Model
@@ -38,12 +38,6 @@ let init (game:MyGame) =
     game.SetResolution 854 480
 
 let loadAssets (game:MyGame) =
-    let rects = ResizeArray<_>()
-    let yOffset = 0f
-    for x=1 to 75 do
-        for y=1 to 40 do
-            rects.Add (RectangleOO (Vector2 (float32 x * 11f, float32 y * 11f + yOffset), Color.White))
-
     let gd = game.GraphicsDevice
     let assets = {
         Font = {
@@ -54,30 +48,26 @@ let loadAssets (game:MyGame) =
             WhiteBox   = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
             Pixel      = Texture2D.create gd 1 1 [|Color.White|]
         }
-        Rects = rects
     }
-
-    Rectangles.loadContent ()
-    Collision.loadContent assets.Texture.Pixel
 
     assets
 
 let initModel assets =
     // ECS System
-    let box = Component.Entity.create ()
-    Component.Position.add (Vector2(50f,50f)) box
-    Component.View.add assets.Texture.WhiteBox box
+    let box = Entity.create ()
+    Position.add (Vector2(50f,50f)) box
+    View.add assets.Texture.WhiteBox box
 
-    let movingBox = Component.Entity.create ()
-    Component.Position.add (Vector2(100f,50f)) movingBox
-    Component.View.add assets.Texture.WhiteBox movingBox
+    let movingBox = Entity.create ()
+    Position.add (Vector2(100f,50f)) movingBox
+    View.add assets.Texture.WhiteBox movingBox
 
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
-            let e = Component.Entity.create ()
-            Component.Position.add (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)) e
-            Component.View.add     (assets.Texture.WhiteBox) e
+            let e = Entity.create ()
+            Position.add (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)) e
+            View.add     (assets.Texture.WhiteBox) e
 
     let gameState = {
         Box       = box
@@ -91,37 +81,27 @@ let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
     Systems.Movement.update gameTime
 
-
     let keyboard = Keyboard.GetState ()
     if keyboard.IsKeyDown Keys.Space then
-        Component.Movement.add (Vector2(50f,0f)) model.MovingBox
+        Movement.add (Vector2(50f,0f)) model.MovingBox
 
     if keyboard.IsKeyDown Keys.Escape then
-        Component.Movement.delete model.MovingBox
+        Movement.delete model.MovingBox
 
     if keyboard.IsKeyDown Keys.Right then
-        Component.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
+        Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime)
-            Component.Position.add pos model.MovingBox
+            Position.add pos model.MovingBox
         )
 
     if keyboard.IsKeyDown Keys.Left then
-        Component.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
+        Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime)
-            Component.Position.add pos model.MovingBox
+            Position.add pos model.MovingBox
         )
 
 
     (*
-    Rectangles.update gameTime
-    Collision.update gameTime
-
-    let gamePad  = GamePad.GetState PlayerIndex.One
-    let keyboard = Keyboard.GetState ()
-
-    // for rect in game.Asset.Rects do
-    //     rect.Update()
-
     // Vibration through Triggers
     // printfn "%f %f" gamePad.Triggers.Left gamePad.Triggers.Right
     GamePad.SetVibration(0,
@@ -149,25 +129,6 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
 
 
     (*
-    let width, height = game.GetResolution ()
-
-    game.spriteBatch.Draw(
-        game.Asset.Texture.Background,
-        Rectangle(0, 0, width, height),
-        Color.White
-    )
-
-    Rectangles.draw game.Asset.Texture.Pixel game.spriteBatch
-
-    // for rect in game.Asset.Rects do
-    //     rect.Draw(game.Asset.Texture.Background, game.spriteBatch)
-
-
-    for draw in Collision.draw game.Asset.Texture.Pixel do
-        match draw with
-        | Collision.Draw (tex,rect,color) ->
-            game.spriteBatch.Draw(tex,rect,color)
-
     game.spriteBatch.DrawString(
         spriteFont = game.Asset.Font.Default,
         text       = "Hello, World!",
@@ -183,7 +144,7 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
 
 
 // Run MonoGame Application
-[<EntryPoint;STAThread>]
+[<EntryPoint;System.STAThread>]
 let main argv =
     using (new Game1<Assets,GameState>(init, loadAssets, initModel, update, draw)) (fun game ->
         game.Run()
