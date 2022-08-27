@@ -1,6 +1,7 @@
 module MyGame.App
 open MyGame.DataTypes
 open MyGame.Components
+open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
@@ -53,20 +54,20 @@ let loadAssets (game:MyGame) =
 
 let initModel assets =
     // ECS System
-    let box = State.Entity.create ()
-    State.Position.add (Vector2(50f,50f)) box
-    State.View.add assets.Texture.WhiteBox box
+    let box = Entity.create ()
+    box.addPosition (Position.createXY 50f 50f)
+    box.addView     (View.create assets.Texture.WhiteBox)
 
-    let movingBox = State.Entity.create ()
-    State.Position.add (Vector2(100f,50f)) movingBox
-    State.View.add assets.Texture.WhiteBox movingBox
+    let movingBox = Entity.create ()
+    movingBox.addPosition (Position.createXY 100f 50f)
+    movingBox.addView     (View.create assets.Texture.WhiteBox)
 
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
-            let e = State.Entity.create ()
-            State.Position.add (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)) e
-            State.View.add     (assets.Texture.WhiteBox) e
+            let box = Entity.create ()
+            box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
+            box.addView     (View.create assets.Texture.WhiteBox)
 
     let gameState = {
         Box       = box
@@ -82,21 +83,21 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
     let keyboard = Keyboard.GetState ()
     if keyboard.IsKeyDown Keys.Space then
-        State.Movement.add (Vector2(50f,0f)) model.MovingBox
+        model.MovingBox.addMovement (Movement.createXY 50f 0f)
 
     if keyboard.IsKeyDown Keys.Escape then
-        State.Movement.delete model.MovingBox
+        model.MovingBox.deleteMovement ()
 
     if keyboard.IsKeyDown Keys.Right then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime)
-            State.Position.add pos model.MovingBox
+            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime))
+            model.MovingBox.addPosition pos
         )
 
     if keyboard.IsKeyDown Keys.Left then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime)
-            State.Position.add pos model.MovingBox
+            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime))
+            model.MovingBox.addPosition pos
         )
 
 

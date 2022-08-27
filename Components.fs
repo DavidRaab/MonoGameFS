@@ -6,9 +6,13 @@ open Microsoft.Xna.Framework.Graphics
 
 module Position =
     let create pos =
-        {Position = pos }
+        { Position = pos }
 
     let position (p:Position) = p.Position
+
+    let createXY x y =
+        create (Vector2.create x y)
+
 
 module View =
     let create sprite =
@@ -21,4 +25,7 @@ module Movement =
         { Direction = dir }
 
     let direction (m:Movement) = m.Direction
+
+    let createXY x y =
+        create (Vector2(x,y))
 

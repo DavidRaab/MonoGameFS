@@ -2,6 +2,7 @@ namespace MyGame.Systems
 open MyGame
 open MyGame.DataTypes
 open MyGame.Components
+open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
@@ -19,9 +20,9 @@ module View =
 // Moves those who should be moved
 module Movement =
     let update (gameTime:GameTime) =
-        for e in State.Entity.all () do
+        for e in Entity.all () do
             State.Position.get e |> ValueOption.iter (fun pos ->
             State.Movement.get e |> ValueOption.iter (fun mov ->
-                let newPos = pos.Position + (mov.Direction * float32 gameTime.ElapsedGameTime.TotalSeconds)
+                let newPos = Position.create (pos.Position + (mov.Direction * float32 gameTime.ElapsedGameTime.TotalSeconds))
                 State.Position.add newPos e
             ))

@@ -1,11 +1,25 @@
 namespace MyGame.State
 open MyGame
 open MyGame.DataTypes
-open MyGame.Components
-open Microsoft.Xna.Framework
-open Microsoft.Xna.Framework.Graphics
 
 type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
+
+type State<'Component>() =
+    let state = Dictionary<Entity,'Component>()
+
+    member _.add comp entity =
+        Dictionary.add entity comp state
+
+    member _.get entity =
+        Dictionary.find entity state
+
+    member _.delete entity =
+        state.Remove entity |> ignore
+
+module State =
+    let Position = State<Position>()
+    let View     = State<View>()
+    let Movement = State<Movement>()
 
 module Entity =
     let mutable private counter = 0
@@ -20,32 +34,20 @@ module Entity =
     let all () =
         entities :> seq<Entity>
 
-module Position =
-    let state = Dictionary<Entity,Position>()
+    let addPosition = State.Position.add
+    let addView     = State.View.add
+    let addMovement = State.Movement.add
 
-    let add pos entity =
-        Dictionary.add entity (Position.create pos) state
+    let deletePosition = State.Position.delete
+    let deleteView     = State.View.delete
+    let deleteMovement = State.Movement.delete
 
-    let get search =
-        Dictionary.find search state
-
-module View =
-    let state = Dictionary<Entity,View>()
-
-    let add sprite entity =
-        Dictionary.add entity (View.create sprite) state
-
-    let get search =
-        Dictionary.find search state
-
-module Movement =
-    let mutable state = Dictionary<Entity,Movement>()
-
-    let add dir entity =
-        Dictionary.add entity (Movement.create dir) state
-
-    let get entity =
-        Dictionary.find entity state
-
-    let delete entity =
-        state.Remove(entity) |> ignore
+[<AutoOpen>]
+module EntityExtension =
+    type Entity with
+        member this.addPosition pos = Entity.addPosition pos this
+        member this.addView    view = Entity.addView    view this
+        member this.addMovement mov = Entity.addMovement mov this
+        member this.deletePosition () = Entity.deletePosition this
+        member this.deleteView     () = Entity.deleteView     this
+        member this.deleteMovement () = Entity.deleteMovement this
