@@ -72,7 +72,7 @@ let initModel assets =
     Component.Position.add (Vector2(100f,50f)) movingBox
     Component.View.add assets.Texture.WhiteBox movingBox
 
-    let yOffset = 20f
+    let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
             let e = Component.Entity.create ()
