@@ -5,29 +5,28 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 
-
-type Fonts = {
-    Default: SpriteFont
-}
-
-type Textures = {
-    Background: Texture2D
-    Pixel:      Texture2D
-    WhiteBox:   Texture2D
-}
-
 type Assets = {
     Font:    Fonts
     Texture: Textures
 }
 
-// Model
-type GameState = {
+and Textures = {
+    Background: Texture2D
+    Pixel:      Texture2D
+    WhiteBox:   Texture2D
+}
+
+and Fonts = {
+    Default: SpriteFont
+}
+
+type Model = {
     Box:       Entity
     MovingBox: Entity
 }
 
-type MyGame = Game1<Assets,GameState>
+// Type Alias for my game
+type MyGame = MonoGame<Assets,Model>
 
 let init (game:MyGame) =
     game.Graphics.SynchronizeWithVerticalRetrace <- false
@@ -54,20 +53,20 @@ let loadAssets (game:MyGame) =
 
 let initModel assets =
     // ECS System
-    let box = Entity.create ()
-    Position.add (Vector2(50f,50f)) box
-    View.add assets.Texture.WhiteBox box
+    let box = State.Entity.create ()
+    State.Position.add (Vector2(50f,50f)) box
+    State.View.add assets.Texture.WhiteBox box
 
-    let movingBox = Entity.create ()
-    Position.add (Vector2(100f,50f)) movingBox
-    View.add assets.Texture.WhiteBox movingBox
+    let movingBox = State.Entity.create ()
+    State.Position.add (Vector2(100f,50f)) movingBox
+    State.View.add assets.Texture.WhiteBox movingBox
 
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
-            let e = Entity.create ()
-            Position.add (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)) e
-            View.add     (assets.Texture.WhiteBox) e
+            let e = State.Entity.create ()
+            State.Position.add (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)) e
+            State.View.add     (assets.Texture.WhiteBox) e
 
     let gameState = {
         Box       = box
@@ -77,27 +76,27 @@ let initModel assets =
     gameState
 
 
-let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
+let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     FPS.update gameTime
     Systems.Movement.update gameTime
 
     let keyboard = Keyboard.GetState ()
     if keyboard.IsKeyDown Keys.Space then
-        Movement.add (Vector2(50f,0f)) model.MovingBox
+        State.Movement.add (Vector2(50f,0f)) model.MovingBox
 
     if keyboard.IsKeyDown Keys.Escape then
-        Movement.delete model.MovingBox
+        State.Movement.delete model.MovingBox
 
     if keyboard.IsKeyDown Keys.Right then
-        Position.get model.MovingBox |> ValueOption.iter (fun pos ->
+        State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime)
-            Position.add pos model.MovingBox
+            State.Position.add pos model.MovingBox
         )
 
     if keyboard.IsKeyDown Keys.Left then
-        Position.get model.MovingBox |> ValueOption.iter (fun pos ->
+        State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime)
-            Position.add pos model.MovingBox
+            State.Position.add pos model.MovingBox
         )
 
 
@@ -122,7 +121,7 @@ let update (model:GameState) (gameTime:GameTime) (game:MyGame) =
     model
 
 
-let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
+let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
@@ -146,7 +145,7 @@ let draw (model:GameState) (gameTime:GameTime) (game:MyGame) =
 // Run MonoGame Application
 [<EntryPoint;System.STAThread>]
 let main argv =
-    using (new Game1<Assets,GameState>(init, loadAssets, initModel, update, draw)) (fun game ->
+    using (new MonoGame<Assets,Model>(init, loadAssets, initModel, update, draw)) (fun game ->
         game.Run()
     )
     1

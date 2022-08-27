@@ -7,7 +7,7 @@ module GamePad =
     let isPressed state =
         state = ButtonState.Pressed
 
-type Game1<'Assets,'GameState>(init, loadAssets, initModel, update, draw) as this =
+type MonoGame<'Assets,'GameState>(init, loadAssets, initModel, update, draw) as this =
     inherit Game()
     let graphics       = new GraphicsDeviceManager(this)
     let mutable sb     = Unchecked.defaultof<SpriteBatch>

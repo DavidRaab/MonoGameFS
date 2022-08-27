@@ -34,7 +34,7 @@
     <Compile Include="Extensions.fs" />
     <Compile Include="DataTypes.fs" />
     <Compile Include="Components.fs" />
-    <Compile Include="GameState.fs" />
+    <Compile Include="State.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Systems.fs" />
     <Compile Include="Fps.fs" />
