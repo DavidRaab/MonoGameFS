@@ -2,6 +2,7 @@ namespace MyGame
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
+type HashSet<'a>       = System.Collections.Generic.HashSet<'a>
 type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
 type TimeSpan          = System.TimeSpan
 
@@ -59,3 +60,30 @@ module Extensions =
                 | None   -> Some (f init)
                 | Some x -> Some (f x)
             ) map
+
+    module HashSet =
+        let intersect (x:HashSet<'a>) (y:HashSet<'a>) =
+            let smaller, greater =
+                if x.Count < y.Count then x,y else y,x
+
+            let newHashSet = HashSet<'a>()
+            for x in smaller do
+                if greater.Contains x then
+                    ignore (newHashSet.Add x)
+
+            newHashSet
+
+        let clone (set:HashSet<'a>) =
+            let nh = HashSet()
+            for x in set do
+                nh.Add x |> ignore
+            nh
+
+        let intersectMany (sets:seq<HashSet<'a>>) =
+            if Seq.isEmpty sets then
+                HashSet()
+            else
+                let smallest = clone (sets |> Seq.minBy (fun set -> set.Count))
+                for set in sets do
+                    smallest.IntersectWith set
+                smallest
