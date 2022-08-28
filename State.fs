@@ -3,18 +3,32 @@ open MyGame
 open MyGame.DataTypes
 
 type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
+type HashSet<'a>       = System.Collections.Generic.HashSet<'a>
 
 type State<'Component>() =
-    let state = Dictionary<Entity,'Component>()
+    let state       = Dictionary<Entity,'Component>()
+    let set         = HashSet<Entity>()
+    member this.Set = set
 
-    member _.add comp entity =
+    // return true if entity was not present before, otherwise false
+    // this information is used to know if HashSet must be recalculated
+    member this.add comp entity =
         Dictionary.add entity comp state
+        this.Set.Add entity
 
     member _.get entity =
         Dictionary.find entity state
 
-    member _.delete entity =
-        state.Remove entity |> ignore
+    member _.iter f entity =
+        let mutable value = Unchecked.defaultof<_>
+        if state.TryGetValue(entity, &value) then
+            f value
+
+    // return true if entity was removed, otherwise false
+    // this information is used to know if HashSet must be recalculated
+    member this.delete entity =
+        state.Remove entity    |> ignore
+        this.Set.Remove entity
 
 module State =
     let Position = State<Position>()
@@ -34,20 +48,40 @@ module Entity =
     let all () =
         entities :> seq<Entity>
 
-    let addPosition = State.Position.add
-    let addView     = State.View.add
-    let addMovement = State.Movement.add
+    let mutable positionsAndView = HashSet<Entity>()
+    let recalcPositionsAndView () =
+        positionsAndView <- HashSet.intersect State.Position.Set State.View.Set
 
-    let deletePosition = State.Position.delete
-    let deleteView     = State.View.delete
-    let deleteMovement = State.Movement.delete
+    let mutable positionsAndMovement = HashSet<Entity>()
+    let recalcPositionsAndMovement () =
+        positionsAndMovement <- HashSet.intersect State.Position.Set State.Movement.Set
 
 [<AutoOpen>]
 module EntityExtension =
     type Entity with
-        member this.addPosition pos = Entity.addPosition pos this
-        member this.addView    view = Entity.addView    view this
-        member this.addMovement mov = Entity.addMovement mov this
-        member this.deletePosition () = Entity.deletePosition this
-        member this.deleteView     () = Entity.deleteView     this
-        member this.deleteMovement () = Entity.deleteMovement this
+        member this.addPosition pos =
+            if State.Position.add pos this then
+                Entity.recalcPositionsAndView ()
+                Entity.recalcPositionsAndMovement ()
+
+        member this.addView view =
+            if State.View.add view this then
+                Entity.recalcPositionsAndView ()
+
+        member this.addMovement   mov =
+            if State.Movement.add mov this then
+                Entity.recalcPositionsAndMovement ()
+
+        member this.deletePosition () =
+            if State.Position.delete this then
+                Entity.recalcPositionsAndView ()
+                Entity.recalcPositionsAndMovement ()
+
+        member this.deleteView () =
+            if State.View.delete this then
+                Entity.recalcPositionsAndView ()
+
+        member this.deleteMovement () =
+            if State.Movement.delete this then
+                Entity.recalcPositionsAndMovement ()
+

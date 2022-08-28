@@ -10,9 +10,9 @@ open Microsoft.Xna.Framework.Graphics
 module View =
     let draw (sb:SpriteBatch) =
         // sb.Begin()
-        for e in State.Entity.all () do
-            State.Position.get e |> ValueOption.iter (fun pos ->
-            State.View.get e     |> ValueOption.iter (fun view ->
+        for entity in Entity.positionsAndView do
+            entity |> State.Position.iter (fun pos  ->
+            entity |> State.View.iter     (fun view ->
                 sb.Draw(view.Sprite, pos.Position, Color.White)
             ))
         // sb.End()
@@ -20,9 +20,9 @@ module View =
 // Moves those who should be moved
 module Movement =
     let update (gameTime:GameTime) =
-        for e in Entity.all () do
-            State.Position.get e |> ValueOption.iter (fun pos ->
-            State.Movement.get e |> ValueOption.iter (fun mov ->
+        for entity in Entity.positionsAndMovement do
+            entity |> State.Position.iter (fun pos ->
+            entity |> State.Movement.iter (fun mov ->
                 let newPos = Position.create (pos.Position + (mov.Direction * float32 gameTime.ElapsedGameTime.TotalSeconds))
-                State.Position.add newPos e
+                entity.addPosition newPos
             ))
