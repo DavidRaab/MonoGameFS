@@ -6,6 +6,8 @@ open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
+type TimeSpan = System.TimeSpan
+
 // View System draws entity
 module View =
     let draw (sb:SpriteBatch) =
@@ -19,10 +21,9 @@ module View =
 
 // Moves those who should be moved
 module Movement =
-    let update (gameTime:GameTime) =
+    let update (deltaTime:TimeSpan) =
         for entity in Entity.positionsAndMovement do
-            entity |> State.Position.iter (fun pos ->
             entity |> State.Movement.iter (fun mov ->
-                let newPos = Position.create (pos.Position + (mov.Direction * float32 gameTime.ElapsedGameTime.TotalSeconds))
-                entity.addPosition newPos
+            entity |> State.Position.map  (fun pos ->
+                Position.create (pos.Position + (mov.Direction * float32 deltaTime.TotalSeconds))
             ))

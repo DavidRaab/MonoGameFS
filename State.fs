@@ -6,18 +6,23 @@ type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
 type HashSet<'a>       = System.Collections.Generic.HashSet<'a>
 
 type State<'Component>() =
-    let state       = Dictionary<Entity,'Component>()
-    let set         = HashSet<Entity>()
-    member this.Set = set
+    let state            = Dictionary<Entity,'Component>()
+    let set              = HashSet<Entity>()
+    member this.Entities = set
 
     // return true if entity was not present before, otherwise false
     // this information is used to know if HashSet must be recalculated
     member this.add comp entity =
         Dictionary.add entity comp state
-        this.Set.Add entity
+        this.Entities.Add entity
 
     member _.get entity =
         Dictionary.find entity state
+
+    member _.map f entity =
+        let mutable value = Unchecked.defaultof<_>
+        if state.TryGetValue(entity, &value) then
+            state.[entity] <- f value
 
     member _.iter f entity =
         let mutable value = Unchecked.defaultof<_>
@@ -27,8 +32,8 @@ type State<'Component>() =
     // return true if entity was removed, otherwise false
     // this information is used to know if HashSet must be recalculated
     member this.delete entity =
-        state.Remove entity    |> ignore
-        this.Set.Remove entity
+        state.Remove entity |> ignore
+        this.Entities.Remove entity
 
 module State =
     let Position = State<Position>()
@@ -50,11 +55,11 @@ module Entity =
 
     let mutable positionsAndView = HashSet<Entity>()
     let recalcPositionsAndView () =
-        positionsAndView <- HashSet.intersect State.Position.Set State.View.Set
+        positionsAndView <- HashSet.intersect State.Position.Entities State.View.Entities
 
     let mutable positionsAndMovement = HashSet<Entity>()
     let recalcPositionsAndMovement () =
-        positionsAndMovement <- HashSet.intersect State.Position.Set State.Movement.Set
+        positionsAndMovement <- HashSet.intersect State.Position.Entities State.Movement.Entities
 
 [<AutoOpen>]
 module EntityExtension =

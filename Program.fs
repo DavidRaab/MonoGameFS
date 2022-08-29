@@ -76,12 +76,14 @@ let initModel assets =
 
     gameState
 
+let pressedKeys       = ResizeArray<Keys>()
+let fixedUpdateTiming = TimeSpan.FromSeconds(1.0 / 60.0)
+let fixedUpdate model deltaTime =
+    Systems.Movement.update deltaTime
 
-let update (model:Model) (gameTime:GameTime) (game:MyGame) =
-    FPS.update gameTime
-    Systems.Movement.update gameTime
+    let keyboard = KeyboardState(pressedKeys.ToArray())
+    pressedKeys.Clear()
 
-    let keyboard = Keyboard.GetState ()
     if keyboard.IsKeyDown Keys.Space then
         model.MovingBox.addMovement (Movement.createXY 50f 0f)
 
@@ -90,16 +92,28 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
     if keyboard.IsKeyDown Keys.Right then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(100f,0f), gameTime.ElapsedGameTime))
+            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(100f,0f), deltaTime))
             model.MovingBox.addPosition pos
         )
 
     if keyboard.IsKeyDown Keys.Left then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(-100f,0f), gameTime.ElapsedGameTime))
+            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(-100f,0f), deltaTime))
             model.MovingBox.addPosition pos
         )
 
+    model
+
+let mutable timeSinceLastFixedUpdate = TimeSpan.Zero
+let update (model:Model) (gameTime:GameTime) (game:MyGame) =
+    FPS.update gameTime
+    pressedKeys.AddRange (Keyboard.GetState().GetPressedKeys())
+
+    let mutable model = model
+    timeSinceLastFixedUpdate <- timeSinceLastFixedUpdate + gameTime.ElapsedGameTime
+    while timeSinceLastFixedUpdate > fixedUpdateTiming do
+        model <- fixedUpdate model fixedUpdateTiming
+        timeSinceLastFixedUpdate <- timeSinceLastFixedUpdate - fixedUpdateTiming
 
     (*
     // Vibration through Triggers
