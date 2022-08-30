@@ -12,9 +12,8 @@ type Assets = {
 }
 
 and Textures = {
-    Background: Texture2D
-    Pixel:      Texture2D
-    WhiteBox:   Texture2D
+    Pixel:    Texture2D
+    WhiteBox: Texture2D
 }
 
 and Fonts = {
@@ -24,10 +23,41 @@ and Fonts = {
 type Model = {
     Box:       Entity
     MovingBox: Entity
+    Boxes:     Entity list
 }
+
+module Timed =
+    let fixedUpdateTiming =
+        TimeSpan.FromSeconds(1.0 / 60.0)
+
+    // Do something after a specific time is elapsed
+    let runEveryTimeFrame timeFrame =
+        let mutable elapsedTime = TimeSpan.Zero
+        fun f deltaTime->
+            elapsedTime <- elapsedTime + deltaTime
+            if elapsedTime >= timeFrame then
+                f ()
+                elapsedTime <- elapsedTime - timeFrame
+
+    let runWithState state =
+        let mutable state = state
+        fun f ->
+            state <- f state
+
+    let runGC =
+        runEveryTimeFrame TimeSpan.oneSecond (fun () ->
+            System.GC.Collect ()
+        )
+
+    let runFixedUpdateTiming =
+        runEveryTimeFrame fixedUpdateTiming
+
+    let runOnBoolean =
+        runWithState true
 
 // Type Alias for my game
 type MyGame = MonoGame<Assets,Model>
+
 
 let init (game:MyGame) =
     game.Graphics.SynchronizeWithVerticalRetrace <- false
@@ -37,6 +67,7 @@ let init (game:MyGame) =
     game.IsMouseVisible        <- true
     game.SetResolution 854 480
 
+
 let loadAssets (game:MyGame) =
     let gd = game.GraphicsDevice
     let assets = {
@@ -44,13 +75,13 @@ let loadAssets (game:MyGame) =
             Default = game.Content.Load<SpriteFont>("Font")
         }
         Texture = {
-            Background = game.Content.Load<Texture2D>("example")
-            WhiteBox   = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
-            Pixel      = Texture2D.create gd 1 1 [|Color.White|]
+            WhiteBox = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
+            Pixel    = Texture2D.create gd 1 1 [|Color.White|]
         }
     }
 
     assets
+
 
 let initModel assets =
     // ECS System
@@ -62,58 +93,70 @@ let initModel assets =
     movingBox.addPosition (Position.createXY 100f 50f)
     movingBox.addView     (View.create assets.Texture.WhiteBox)
 
+    let boxes = ResizeArray<_>()
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
             let box = Entity.create ()
             box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
             box.addView     (View.create assets.Texture.WhiteBox)
+            boxes.Add box
 
     let gameState = {
         Box       = box
         MovingBox = movingBox
+        Boxes     = List.ofSeq boxes
     }
-
     gameState
 
-let pressedKeys       = ResizeArray<Keys>()
-let fixedUpdateTiming = TimeSpan.FromSeconds(1.0 / 60.0)
+
+let pressedKeys = ResizeArray<Keys>()
 let fixedUpdate model deltaTime =
     Systems.Movement.update deltaTime
+    // Run GC periodically
+    Timed.runGC deltaTime
+
+    Timed.runOnBoolean (fun state ->
+        let vec = if state then Vector2.right 10f else Vector2.left 10f
+        for box in model.Boxes do
+            State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
+        not state
+    )
 
     let keyboard = KeyboardState(pressedKeys.ToArray())
     pressedKeys.Clear()
 
     if keyboard.IsKeyDown Keys.Space then
-        model.MovingBox.addMovement (Movement.createXY 50f 0f)
+        model.MovingBox.addMovement (Movement.create (Vector2.right 50f))
 
     if keyboard.IsKeyDown Keys.Escape then
         model.MovingBox.deleteMovement ()
 
     if keyboard.IsKeyDown Keys.Right then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(100f,0f), deltaTime))
+            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2.right 100f, deltaTime))
             model.MovingBox.addPosition pos
         )
 
     if keyboard.IsKeyDown Keys.Left then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2(-100f,0f), deltaTime))
+            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2.left 100f, deltaTime))
             model.MovingBox.addPosition pos
         )
 
     model
 
-let mutable timeSinceLastFixedUpdate = TimeSpan.Zero
+
 let update (model:Model) (gameTime:GameTime) (game:MyGame) =
-    FPS.update gameTime
+    let deltaTime = gameTime.ElapsedGameTime
+    FPS.update deltaTime
     pressedKeys.AddRange (Keyboard.GetState().GetPressedKeys())
 
+    // FixedUpdate Handling
     let mutable model = model
-    timeSinceLastFixedUpdate <- timeSinceLastFixedUpdate + gameTime.ElapsedGameTime
-    while timeSinceLastFixedUpdate > fixedUpdateTiming do
-        model <- fixedUpdate model fixedUpdateTiming
-        timeSinceLastFixedUpdate <- timeSinceLastFixedUpdate - fixedUpdateTiming
+    Timed.runFixedUpdateTiming (fun () ->
+        model <- fixedUpdate model Timed.fixedUpdateTiming
+    ) deltaTime
 
     (*
     // Vibration through Triggers
@@ -140,7 +183,6 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
-
 
     (*
     game.spriteBatch.DrawString(

@@ -24,9 +24,9 @@ let state =
     create 0 0 TimeSpan.Zero 0.0 0.0
 
 // Called on each update
-let update (gameTime:GameTime) =
+let update (deltaTime:TimeSpan) =
     state.Updates     <- state.Updates + 1
-    state.ElapsedTime <- state.ElapsedTime + gameTime.ElapsedGameTime
+    state.ElapsedTime <- state.ElapsedTime + deltaTime
 
     if state.ElapsedTime >= TimeSpan.oneSecond then
         state.UpdateFPS   <- float state.Updates / state.ElapsedTime.TotalSeconds

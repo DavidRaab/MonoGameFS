@@ -9,10 +9,14 @@ module Position =
         { Position = pos }
 
     let position (p:Position) = p.Position
+    let withPosition newPos pos =
+        { pos with Position = newPos }
 
     let createXY x y =
         create (Vector2.create x y)
 
+    let add vec2 pos =
+        { pos with Position = pos.Position + vec2 }
 
 module View =
     let create sprite =
