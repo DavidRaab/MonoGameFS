@@ -26,15 +26,14 @@ type MonoGame<'Assets,'GameState>(init, loadAssets, initModel, update, draw) as 
         sb     <- new SpriteBatch(this.GraphicsDevice)
         assets <- loadAssets this
         model  <- initModel assets
+        base.LoadContent ()
 
     override this.Update(gameTime) =
         model <- update model gameTime this
         base.Update gameTime
 
     override this.Draw gameTime =
-        this.spriteBatch.Begin ()
         draw model gameTime this
-        this.spriteBatch.End ()
         base.Draw gameTime
 
     member this.SetResolution x y =

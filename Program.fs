@@ -180,9 +180,11 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
+    game.spriteBatch.Begin ()
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
+    game.spriteBatch.End ()
 
     (*
     game.spriteBatch.DrawString(
