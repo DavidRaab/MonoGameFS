@@ -2,6 +2,7 @@ module MyGame.App
 open MyGame.DataTypes
 open MyGame.Components
 open MyGame.State
+open MyGame.Entity
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
