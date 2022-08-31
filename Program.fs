@@ -24,8 +24,12 @@ and Fonts = {
 type Model = {
     Box:       Entity
     MovingBox: Entity
-    Boxes:     Entity list
+    MoveBoxes: Timer<bool>
 }
+
+// 1. Run once after time
+// 2. Run for a duration
+// 3. Run periodically after a time
 
 module Timed =
     let fixedUpdateTiming =
@@ -53,8 +57,6 @@ module Timed =
     let runFixedUpdateTiming =
         runEveryTimeFrame fixedUpdateTiming
 
-    let runOnBoolean =
-        runWithState true
 
 // Type Alias for my game
 type MyGame = MonoGame<Assets,Model>
@@ -103,10 +105,17 @@ let initModel assets =
             box.addView     (View.create assets.Texture.WhiteBox)
             boxes.Add box
 
+    let moveBoxes = Systems.Timer.every (TimeSpan.FromSeconds 1.0) false (fun state ->
+        let vec = if state then Vector2.right 10f else Vector2.left 10f
+        for box in boxes do
+            State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
+        not state
+    )
+
     let gameState = {
         Box       = box
         MovingBox = movingBox
-        Boxes     = List.ofSeq boxes
+        MoveBoxes = moveBoxes
     }
     gameState
 
@@ -116,13 +125,7 @@ let fixedUpdate model deltaTime =
     Systems.Movement.update deltaTime
     // Run GC periodically
     Timed.runGC deltaTime
-
-    Timed.runOnBoolean (fun state ->
-        let vec = if state then Vector2.right 10f else Vector2.left 10f
-        for box in model.Boxes do
-            State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
-        not state
-    )
+    Systems.Timer.run deltaTime model.MoveBoxes |> ignore
 
     let keyboard = KeyboardState(pressedKeys.ToArray())
     pressedKeys.Clear()
