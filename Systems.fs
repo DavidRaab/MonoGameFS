@@ -29,7 +29,7 @@ module Timer =
 module View =
     let draw (sb:SpriteBatch) =
         // sb.Begin()
-        for entity in Entity.positionsAndView do
+        for entity in Entity.positionsAndView.GetCache() do
             entity |> State.Position.iter (fun pos  ->
             entity |> State.View.iter     (fun view ->
                 sb.Draw(view.Sprite, pos.Position, Color.White)
@@ -39,7 +39,7 @@ module View =
 // Moves those who should be moved
 module Movement =
     let update (deltaTime:TimeSpan) =
-        for entity in Entity.positionsAndMovement do
+        for entity in Entity.positionsAndMovement.GetCache () do
             entity |> State.Movement.iter (fun mov ->
             entity |> State.Position.map  (fun pos ->
                 Position.create (pos.Position + (mov.Direction * float32 deltaTime.TotalSeconds))
