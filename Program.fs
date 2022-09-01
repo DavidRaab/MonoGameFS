@@ -22,9 +22,10 @@ and Fonts = {
 }
 
 type Model = {
-    Box:       Entity
-    MovingBox: Entity
-    MoveBoxes: Timer<bool>
+    Box:        Entity
+    MovingBox:  Entity
+    MovingBox3: list<Entity>
+    MoveBoxes:  Timer<bool>
 }
 
 // 1. Run once after time
@@ -88,13 +89,20 @@ let loadAssets (game:MyGame) =
 
 let initModel assets =
     // ECS System
-    let box = Entity.create ()
-    box.addPosition (Position.createXY 50f 50f)
-    box.addView     (View.create assets.Texture.WhiteBox)
+    let box = Entity.init (fun e ->
+        e.addPosition (Position.createXY 50f 50f)
+        e.addView     (View.create assets.Texture.WhiteBox)
+    )
 
-    let movingBox = Entity.create ()
-    movingBox.addPosition (Position.createXY 100f 50f)
-    movingBox.addView     (View.create assets.Texture.WhiteBox)
+    let movingBox = Entity.init (fun e ->
+        e.addPosition (Position.createXY 100f 50f)
+        e.addView     (View.create assets.Texture.WhiteBox)
+    )
+
+    let movingBox3 = Entity.initMany 3 (fun idx e ->
+        e.addPosition (Position.createXY (150f + (15f * float32 idx)) 50f)
+        e.addView     (View.create assets.Texture.WhiteBox)
+    )
 
     let boxes = ResizeArray<_>()
     let yOffset = 50f
@@ -113,9 +121,10 @@ let initModel assets =
     )
 
     let gameState = {
-        Box       = box
-        MovingBox = movingBox
-        MoveBoxes = moveBoxes
+        Box        = box
+        MovingBox  = movingBox
+        MovingBox3 = movingBox3
+        MoveBoxes  = moveBoxes
     }
     gameState
 
@@ -131,7 +140,13 @@ let fixedUpdate model deltaTime =
     pressedKeys.Clear()
 
     if keyboard.IsKeyDown Keys.Space then
-        model.MovingBox.addMovement (Movement.create (Vector2.right 50f))
+        // Toggles between automatic moving and stopping
+        // TODO -- But needs better keyboard handling
+        let toggleMovement = function
+            | ValueNone   -> ValueSome (Movement.create (Vector2.right 50f))
+            | ValueSome x -> ValueNone
+        State.Movement.change model.MovingBox toggleMovement
+        List.iter (fun e -> State.Movement.change e toggleMovement) model.MovingBox3
 
     if keyboard.IsKeyDown Keys.Escape then
         model.MovingBox.deleteMovement ()
@@ -152,9 +167,16 @@ let fixedUpdate model deltaTime =
 
 
 let update (model:Model) (gameTime:GameTime) (game:MyGame) =
+    // Get Keyboard State
+    let keyboard = Keyboard.GetState ()
+    pressedKeys.AddRange (keyboard.GetPressedKeys())
+
+    // Close Game
+    if keyboard.IsKeyDown Keys.Escape then
+        game.Exit ()
+
     let deltaTime = gameTime.ElapsedGameTime
     FPS.update deltaTime
-    pressedKeys.AddRange (Keyboard.GetState().GetPressedKeys())
 
     // FixedUpdate Handling
     let mutable model = model

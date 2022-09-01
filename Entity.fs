@@ -5,7 +5,7 @@ open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-// Provides an Cache for the State<'a> classes
+// Provides a Cache for getting entities with certain components
 type ICacheable =
     abstract member Entities          : HashSet<Entity>
     abstract member OnEntitiesChanged : IEvent<unit>
@@ -48,6 +48,18 @@ module Entity =
         let e = Entity counter
         entities.Add e
         e
+
+    let init f =
+        let entity = create ()
+        f entity
+        entity
+
+    let initMany count f = [
+        for idx in 0 .. count-1 do
+            let e = create ()
+            f idx e
+            yield e
+    ]
 
     let all () =
         entities :> seq<Entity>
