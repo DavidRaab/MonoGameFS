@@ -25,13 +25,13 @@ module Extensions =
         static member toPoint (vec:Vector2) =
             vec.ToPoint ()
         static member right (scaling:float32) =
-            Vector2(1f * scaling, 0f)
+            Vector2(scaling, 0f)
         static member left (scaling:float32) =
-            Vector2(-1f * scaling, 0f)
+            Vector2(-scaling, 0f)
         static member up (scaling:float32) =
-            Vector2(0f, 1f * scaling)
+            Vector2(0f, scaling)
         static member down (scaling:float32) =
-            Vector2(0f, -1f * scaling)
+            Vector2(0f, -scaling)
 
     type System.Collections.Generic.Dictionary<'a,'b> with
         static member add key value (dic:Dictionary<'a,'b>) =
