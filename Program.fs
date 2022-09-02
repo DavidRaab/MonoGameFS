@@ -128,18 +128,31 @@ let initModel assets =
     }
     gameState
 
+let mutable previousKeyboardState = KeyboardState([||])
+let mutable keyboard              = KeyboardState([||])
+let pressedKeys                   = ResizeArray<Keys>()
 
-let pressedKeys = ResizeArray<Keys>()
+let keyWasPressed key =
+    if previousKeyboardState.IsKeyUp key then
+        if keyboard.IsKeyDown key then
+            true
+        else
+            false
+    else
+        false
+
 let fixedUpdate model deltaTime =
     Systems.Movement.update deltaTime
     // Run GC periodically
     Timed.runGC deltaTime
     Systems.Timer.run deltaTime model.MoveBoxes |> ignore
 
-    let keyboard = KeyboardState(pressedKeys.ToArray())
+    // Built the current Keyboard State and set the Previous
+    previousKeyboardState <- keyboard
+    keyboard              <- KeyboardState(pressedKeys.ToArray())
     pressedKeys.Clear()
 
-    if keyboard.IsKeyDown Keys.Space then
+    if keyWasPressed Keys.Space then
         // Toggles between automatic moving and stopping
         // TODO -- But needs better keyboard handling
         let toggleMovement = function
@@ -148,7 +161,7 @@ let fixedUpdate model deltaTime =
         State.Movement.change model.MovingBox toggleMovement
         List.iter (fun e -> State.Movement.change e toggleMovement) model.MovingBox3
 
-    if keyboard.IsKeyDown Keys.Escape then
+    if keyWasPressed Keys.Escape then
         model.MovingBox.deleteMovement ()
 
     if keyboard.IsKeyDown Keys.Right then
