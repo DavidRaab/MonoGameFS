@@ -37,6 +37,7 @@
     <Compile Include="State.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Systems.fs" />
+    <Compile Include="Utility.fs" />
     <Compile Include="Fps.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="Program.fs" />

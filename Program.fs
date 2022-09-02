@@ -3,9 +3,12 @@ open MyGame.DataTypes
 open MyGame.Components
 open MyGame.State
 open MyGame.Entity
+open MyGame.Utility
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-open Microsoft.Xna.Framework.Input
+
+// Only load the Keys -- I have my own Input Implementation on top of MonoGame
+type Keys = Input.Keys
 
 type Assets = {
     Font:    Fonts
@@ -28,41 +31,11 @@ type Model = {
     MoveBoxes:  Timer<bool>
 }
 
-// 1. Run once after time
-// 2. Run for a duration
-// 3. Run periodically after a time
-
-module Timed =
-    let fixedUpdateTiming =
-        TimeSpan.FromSeconds(1.0 / 60.0)
-
-    // Do something after a specific time is elapsed
-    let runEveryTimeFrame timeFrame =
-        let mutable elapsedTime = TimeSpan.Zero
-        fun f deltaTime->
-            elapsedTime <- elapsedTime + deltaTime
-            if elapsedTime >= timeFrame then
-                f ()
-                elapsedTime <- elapsedTime - timeFrame
-
-    let runWithState state =
-        let mutable state = state
-        fun f ->
-            state <- f state
-
-    let runGC =
-        runEveryTimeFrame TimeSpan.oneSecond (fun () ->
-            System.GC.Collect ()
-        )
-
-    let runFixedUpdateTiming =
-        runEveryTimeFrame fixedUpdateTiming
-
-
 // Type Alias for my game
 type MyGame = MonoGame<Assets,Model>
 
 
+// Initialization of the Game
 let init (game:MyGame) =
     game.Graphics.SynchronizeWithVerticalRetrace <- false
     game.IsFixedTimeStep       <- false
@@ -72,6 +45,7 @@ let init (game:MyGame) =
     game.SetResolution 854 480
 
 
+// Loading Assets
 let loadAssets (game:MyGame) =
     let gd = game.GraphicsDevice
     let assets = {
@@ -87,6 +61,7 @@ let loadAssets (game:MyGame) =
     assets
 
 
+// Initialize the Game Model
 let initModel assets =
     // ECS System
     let box = Entity.init (fun e ->
@@ -128,61 +103,47 @@ let initModel assets =
     }
     gameState
 
-let mutable previousKeyboardState = KeyboardState([||])
-let mutable keyboard              = KeyboardState([||])
-let pressedKeys                   = ResizeArray<Keys>()
 
-let keyWasPressed key =
-    if previousKeyboardState.IsKeyUp key then
-        if keyboard.IsKeyDown key then
-            true
-        else
-            false
-    else
-        false
-
+// A Fixed Update implementation. This currently runs 60 times per second.
+// Can be configured in Utility.fs -> Timed.fixedUpdateTiming
 let fixedUpdate model deltaTime =
     Systems.Movement.update deltaTime
     // Run GC periodically
     Timed.runGC deltaTime
     Systems.Timer.run deltaTime model.MoveBoxes |> ignore
 
-    // Built the current Keyboard State and set the Previous
-    previousKeyboardState <- keyboard
-    keyboard              <- KeyboardState(pressedKeys.ToArray())
-    pressedKeys.Clear()
-
-    if keyWasPressed Keys.Space then
+    if Keyboard.isPressed Keys.Space then
         // Toggles between automatic moving and stopping
-        // TODO -- But needs better keyboard handling
         let toggleMovement = function
             | ValueNone   -> ValueSome (Movement.create (Vector2.right 50f))
             | ValueSome x -> ValueNone
         State.Movement.change model.MovingBox toggleMovement
         List.iter (fun e -> State.Movement.change e toggleMovement) model.MovingBox3
 
-    if keyWasPressed Keys.Escape then
-        model.MovingBox.deleteMovement ()
-
-    if keyboard.IsKeyDown Keys.Right then
+    if Keyboard.isKeyDown Keys.Right then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = Position.create (pos.Position + Vector2.Multiply(Vector2.right 100f, deltaTime))
             model.MovingBox.addPosition pos
         )
 
-    if keyboard.IsKeyDown Keys.Left then
+    if Keyboard.isKeyDown Keys.Left then
         State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
             let pos = Position.create (pos.Position + Vector2.Multiply(Vector2.left 100f, deltaTime))
             model.MovingBox.addPosition pos
         )
 
+    // Resets the Keyboard State
+    Keyboard.nextState ()
+
     model
 
 
 let update (model:Model) (gameTime:GameTime) (game:MyGame) =
-    // Get Keyboard State
-    let keyboard = Keyboard.GetState ()
-    pressedKeys.AddRange (keyboard.GetPressedKeys())
+    // Get current keyboard state and add it to our KeyBoard module
+    // This way we ensure that fixedUpdate has correct keyboard state between
+    // fixedUpdate calls and not just from the current update.
+    let keyboard = Input.Keyboard.GetState ()
+    Keyboard.addKeys (keyboard.GetPressedKeys())
 
     // Close Game
     if keyboard.IsKeyDown Keys.Escape then
@@ -225,7 +186,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     Systems.View.draw game.spriteBatch
     game.spriteBatch.End ()
 
-    (*
+    (* // Full Example for all parameters
     game.spriteBatch.DrawString(
         spriteFont = game.Asset.Font.Default,
         text       = "Hello, World!",
