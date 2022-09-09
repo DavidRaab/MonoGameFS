@@ -31,15 +31,15 @@
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions.fs" />
-    <Compile Include="DataTypes.fs" />
-    <Compile Include="Components.fs" />
-    <Compile Include="State.fs" />
-    <Compile Include="Entity.fs" />
-    <Compile Include="Systems.fs" />
-    <Compile Include="Utility.fs" />
-    <Compile Include="Fps.fs" />
-    <Compile Include="Game.fs" />
-    <Compile Include="Program.fs" />
+    <Compile Include="01_Extensions.fs" />
+    <Compile Include="02_DataTypes.fs" />
+    <Compile Include="03_Components.fs" />
+    <Compile Include="04_State.fs" />
+    <Compile Include="05_Entity.fs" />
+    <Compile Include="06_Systems.fs" />
+    <Compile Include="07_Utility.fs" />
+    <Compile Include="08_Fps.fs" />
+    <Compile Include="09_Game.fs" />
+    <Compile Include="10_Program.fs" />
   </ItemGroup>
 </Project>
