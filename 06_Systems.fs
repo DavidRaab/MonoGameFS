@@ -4,26 +4,11 @@ open MyGame.DataTypes
 open MyGame.Components
 open MyGame.State
 open MyGame.Entity
+open MyGame.Timer
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 type TimeSpan = System.TimeSpan
-
-module Timer =
-    let every timeFrame state f = {
-        ElapsedTime = TimeSpan.Zero
-        TimeFrame   = timeFrame
-        Execute     = f
-        State       = state
-    }
-
-    let wrap x = every TimeSpan.Zero () (fun dt -> x)
-
-    let run deltaTime (timer:Timer<'a>) =
-        timer.ElapsedTime <- timer.ElapsedTime + deltaTime
-        if timer.ElapsedTime >= timer.TimeFrame then
-            timer.ElapsedTime <- timer.ElapsedTime - timer.TimeFrame
-            timer.State       <- timer.Execute timer.State
 
 // View System draws entity
 module View =
@@ -44,3 +29,17 @@ module Movement =
             entity |> State.Position.map  (fun pos ->
                 Position.create (pos.Position + (mov.Direction * float32 deltaTime.TotalSeconds))
             ))
+
+module Timer =
+    let mutable state = ResizeArray<Timed<unit>>()
+
+    let addTimer timer =
+        state.Add (Timed.get timer)
+
+    let update (deltaTime:TimeSpan) =
+        for idx=0 to state.Count-1 do
+            match Timed.run deltaTime (state.[idx]) with
+            | Pending    -> ()
+            | Finished _ -> state.RemoveAt(idx)
+
+

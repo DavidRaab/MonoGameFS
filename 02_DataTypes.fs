@@ -18,10 +18,3 @@ type View = {
 type Movement = {
     Direction : Vector2
 }
-
-type Timer<'a> = {
-    mutable ElapsedTime : TimeSpan
-    TimeFrame           : TimeSpan
-    Execute             : 'a -> 'a
-    mutable State       : 'a
-}

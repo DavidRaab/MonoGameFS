@@ -4,6 +4,7 @@ open MyGame.Components
 open MyGame.State
 open MyGame.Entity
 open MyGame.Utility
+open MyGame.Timer
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
@@ -28,7 +29,6 @@ type Model = {
     Box:        Entity
     MovingBox:  Entity
     MovingBox3: list<Entity>
-    MoveBoxes:  Timer<bool>
 }
 
 // Type Alias for my game
@@ -88,29 +88,31 @@ let initModel assets =
             box.addView     (View.create assets.Texture.WhiteBox)
             boxes.Add box
 
-    let moveBoxes = Systems.Timer.every (TimeSpan.FromSeconds 1.0) false (fun state ->
+    Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 1.0) false (fun state dt ->
         let vec = if state then Vector2.right 10f else Vector2.left 10f
         for box in boxes do
             State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
-        not state
-    )
+        State (not state)
+    ))
+
+    Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 1.0) () (fun _ _ ->
+        System.GC.Collect ()
+        State ()
+    ))
 
     let gameState = {
         Box        = box
         MovingBox  = movingBox
         MovingBox3 = movingBox3
-        MoveBoxes  = moveBoxes
     }
     gameState
 
 
-// A Fixed Update implementation. This currently runs 60 times per second.
-// Can be configured in Utility.fs -> Timed.fixedUpdateTiming
+// A Fixed Update implementation that tuns at the specified fixedUpdateTiming
+let fixedUpdateTiming = TimeSpan.FromSeconds (1.0 / 60.0)
 let fixedUpdate model deltaTime =
     Systems.Movement.update deltaTime
-    // Run GC periodically
-    Timed.runGC deltaTime
-    Systems.Timer.run deltaTime model.MoveBoxes |> ignore
+    Systems.Timer.update deltaTime
 
     if Keyboard.isPressed Keys.Space then
         // Toggles between automatic moving and stopping
@@ -138,6 +140,7 @@ let fixedUpdate model deltaTime =
     model
 
 
+let mutable fixedUpdateElapsedTime = TimeSpan.Zero
 let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     // Get current keyboard state and add it to our KeyBoard module
     // This way we ensure that fixedUpdate has correct keyboard state between
@@ -153,10 +156,13 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     FPS.update deltaTime
 
     // FixedUpdate Handling
-    let mutable model = model
-    Timed.runFixedUpdateTiming (fun () ->
-        model <- fixedUpdate model Timed.fixedUpdateTiming
-    ) deltaTime
+    fixedUpdateElapsedTime <- fixedUpdateElapsedTime + deltaTime
+    let model =
+        if fixedUpdateElapsedTime >= fixedUpdateTiming then
+            fixedUpdateElapsedTime <- fixedUpdateElapsedTime - fixedUpdateTiming
+            fixedUpdate model fixedUpdateTiming
+        else
+            model
 
     (*
     // Vibration through Triggers

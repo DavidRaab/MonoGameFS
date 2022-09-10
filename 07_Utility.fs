@@ -44,35 +44,3 @@ module Keyboard =
 
     let isKeyUp key =
         currentState.IsKeyUp key
-
-// TODO: What i need later -- but maybe this gets into an Animation system
-// Currently only provides the 3. form
-// 1. Run once after time
-// 2. Run for a duration
-// 3. Run periodically after a time
-
-module Timed =
-    let fixedUpdateTiming =
-        TimeSpan.FromSeconds(1.0 / 60.0)
-
-    // Do something after a specific time is elapsed
-    let runEveryTimeFrame timeFrame =
-        let mutable elapsedTime = TimeSpan.Zero
-        fun f deltaTime->
-            elapsedTime <- elapsedTime + deltaTime
-            if elapsedTime >= timeFrame then
-                f ()
-                elapsedTime <- elapsedTime - timeFrame
-
-    let runWithState state =
-        let mutable state = state
-        fun f ->
-            state <- f state
-
-    let runGC =
-        runEveryTimeFrame TimeSpan.oneSecond (fun () ->
-            System.GC.Collect ()
-        )
-
-    let runFixedUpdateTiming =
-        runEveryTimeFrame fixedUpdateTiming
