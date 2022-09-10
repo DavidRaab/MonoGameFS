@@ -17,7 +17,21 @@ module View =
         for entity in Entity.positionsAndView.GetCache() do
             entity |> State.Position.iter (fun pos  ->
             entity |> State.View.iter     (fun view ->
-                sb.Draw(view.Sprite, pos.Position, Color.White)
+                sb.Draw(
+                    texture              = view.Sprite,
+                    destinationRectangle = Rectangle(
+                        int pos.Position.X,
+                        int pos.Position.Y,
+                        view.Sprite.Width,
+                        view.Sprite.Height
+                    ),
+                    sourceRectangle      = System.Nullable(),
+                    color                = view.Tint,
+                    rotation             = view.Rotation,
+                    origin               = view.Origin,
+                    effects              = view.Effects,
+                    layerDepth           = view.Depth
+                )
             ))
         // sb.End()
 

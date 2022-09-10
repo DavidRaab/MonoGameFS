@@ -84,21 +84,37 @@ module Timer =
             )
         )
 
-    /// Calls a function every timeSpan
+    /// Calls a function every `timeSpan`. If `timeSpan` is zero the function is executed
+    /// on every `Timed.run` call and gets passed the real deltaTime between two calls.
     let every timeSpan (state:'State) f =
         Timer(fun () ->
             let mutable elapsedTime = TimeSpan.Zero
             let mutable state       = state
-            Timed.create (fun dt ->
-                elapsedTime <- elapsedTime + dt
-                if elapsedTime >= timeSpan then
-                    elapsedTime <- elapsedTime - timeSpan
-                    match f state timeSpan with
+
+            if timeSpan = TimeSpan.Zero then
+                Timed.create (fun dt ->
+                    match f state dt with
                     | State s  -> state <- s; Pending
-                    | Finish x -> Finished (x, elapsedTime)
-                else
-                    Pending
-            )
+                    | Finish x -> Finished (x, TimeSpan.Zero)
+                )
+            else
+                Timed.create (fun dt ->
+                    let rec loop dt =
+                        elapsedTime <- elapsedTime + dt
+                        if elapsedTime >= timeSpan then
+                            elapsedTime <- elapsedTime - timeSpan
+                            match f state timeSpan with
+                            | State s ->
+                                state <- s;
+                                if elapsedTime >= timeSpan
+                                then loop TimeSpan.Zero
+                                else Pending
+                            | Finish x ->
+                                Finished (x, elapsedTime)
+                        else
+                            Pending
+                    loop dt
+                )
         )
 
     /// A function is executed `amount` times every `timeSpan` then it finish with the final

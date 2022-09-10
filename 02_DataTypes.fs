@@ -12,7 +12,13 @@ type Position = {
 }
 
 type View = {
-    Sprite : Texture2D
+    Sprite:   Texture2D
+    Tint:     Color
+    Rotation: float32
+    Origin:   Vector2
+    Scale:    Vector2
+    Effects:  SpriteEffects
+    Depth:    float32
 }
 
 type Movement = {

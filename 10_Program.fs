@@ -11,21 +11,23 @@ open Microsoft.Xna.Framework.Graphics
 // Only load the Keys -- I have my own Input Implementation on top of MonoGame
 type Keys = Input.Keys
 
+// Assets
 type Assets = {
     Font:    Fonts
     Texture: Textures
 }
-
 and Textures = {
+    Arrow:    Texture2D
     Pixel:    Texture2D
     WhiteBox: Texture2D
 }
-
 and Fonts = {
     Default: SpriteFont
 }
 
+// Model
 type Model = {
+    Arrow:      Entity
     Box:        Entity
     MovingBox:  Entity
     MovingBox3: list<Entity>
@@ -53,6 +55,7 @@ let loadAssets (game:MyGame) =
             Default = game.Content.Load<SpriteFont>("Font")
         }
         Texture = {
+            Arrow    = game.Content.Load<Texture2D>("arrow")
             WhiteBox = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
             Pixel    = Texture2D.create gd 1 1 [|Color.White|]
         }
@@ -66,27 +69,43 @@ let initModel assets =
     // ECS System
     let box = Entity.init (fun e ->
         e.addPosition (Position.createXY 50f 50f)
-        e.addView     (View.create assets.Texture.WhiteBox)
+        e.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
     )
 
     let movingBox = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 50f)
-        e.addView     (View.create assets.Texture.WhiteBox)
+        e.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
     )
 
     let movingBox3 = Entity.initMany 3 (fun idx e ->
         e.addPosition (Position.createXY (150f + (15f * float32 idx)) 50f)
-        e.addView     (View.create assets.Texture.WhiteBox)
+        e.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
+    )
+
+    let arrow = Entity.init (fun e ->
+        e.addPosition (Position.createXY 100f 100f)
+        e.addView     (
+            View.fromSprite assets.Texture.Arrow 1f
+            |> View.setOrigin Center
+        )
+        Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 0.5) () (fun _ dt ->
+            State.View.change e (function
+                | ValueNone      -> ValueNone
+                | ValueSome view -> ValueSome { view with Rotation = view.Rotation + 0.1f }
+            )
+            State ()
+        ))
     )
 
     let boxes = ResizeArray<_>()
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
-            let box = Entity.create ()
-            box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
-            box.addView     (View.create assets.Texture.WhiteBox)
-            boxes.Add box
+            boxes.Add (Entity.init (fun box ->
+                box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
+                box.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
+            ))
+
 
     Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 1.0) false (fun state dt ->
         let vec = if state then Vector2.right 10f else Vector2.left 10f
@@ -101,6 +120,7 @@ let initModel assets =
     ))
 
     let gameState = {
+        Arrow      = arrow
         Box        = box
         MovingBox  = movingBox
         MovingBox3 = movingBox3
@@ -186,7 +206,9 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
-    game.spriteBatch.Begin ()
+    game.spriteBatch.Begin (
+        sortMode = SpriteSortMode.FrontToBack
+    )
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
