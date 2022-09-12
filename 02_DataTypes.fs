@@ -18,7 +18,7 @@ type View = {
     Origin:   Vector2
     Scale:    Vector2
     Effects:  SpriteEffects
-    Depth:    float32
+    Layer:    float32
 }
 
 type Movement = {

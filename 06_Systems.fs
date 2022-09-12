@@ -19,7 +19,7 @@ module View =
                 | ValueSome p, ValueSome v -> p,v
                 | _                        -> ()
         |]
-        posAndView |> Array.sortInPlaceBy (fun (p,v) -> v.Depth)
+        posAndView |> Array.sortInPlaceBy (fun (p,v) -> v.Layer)
         for pos,view in posAndView do
             sb.Draw(
                 texture              = view.Sprite,
@@ -34,7 +34,7 @@ module View =
                 rotation             = view.Rotation,
                 origin               = view.Origin,
                 effects              = view.Effects,
-                layerDepth           = view.Depth
+                layerDepth           = view.Layer
             )
 
 // Moves those who should be moved

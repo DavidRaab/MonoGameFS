@@ -28,8 +28,9 @@ type Origin =
     | BottomLeft
     | Bottom
     | BottomRight
+    | Position of float32 * float32
 
-type ViewDepth =
+type ViewLayer =
     | BG2
     | BG1
     | FG2
@@ -38,9 +39,9 @@ type ViewDepth =
     | UI1
 
 module View =
-    let create sprite tint rotation origin scale effect depth =
-        let depth =
-            match depth with
+    let create sprite tint rotation origin scale effect layer =
+        let layer =
+            match layer with
             | BG2 -> 0.1f
             | BG1 -> 0.2f
             | FG2 -> 0.3f
@@ -54,11 +55,11 @@ module View =
             Origin   = origin
             Scale    = scale
             Effects  = effect
-            Depth    = depth
+            Layer    = layer
         }
 
-    let fromSprite sprite depth =
-        create sprite Color.White 0f Vector2.Zero Vector2.Zero SpriteEffects.None depth
+    let fromSprite sprite layer =
+        create sprite Color.White 0f Vector2.Zero Vector2.Zero SpriteEffects.None layer
 
     let setOrigin name view =
         let width  = float32 view.Sprite.Width
@@ -66,15 +67,16 @@ module View =
         let origin =
             let x,y =
                 match name with
-                | TopLeft     ->         0f,          0f
-                | Top         -> width / 2f,          0f
-                | TopRight    -> width     ,          0f
-                | Left        ->         0f, height / 2f
-                | Center      -> width / 2f, height / 2f
-                | Right       -> width     , height / 2f
-                | BottomLeft  ->         0f, height
-                | Bottom      -> width / 2f, height
-                | BottomRight -> width     , height
+                | TopLeft        ->         0f,          0f
+                | Top            -> width / 2f,          0f
+                | TopRight       -> width     ,          0f
+                | Left           ->         0f, height / 2f
+                | Center         -> width / 2f, height / 2f
+                | Right          -> width     , height / 2f
+                | BottomLeft     ->         0f, height
+                | Bottom         -> width / 2f, height
+                | BottomRight    -> width     , height
+                | Position (x,y) -> x,y
             Vector2(x,y)
         { view with Origin = origin }
 
