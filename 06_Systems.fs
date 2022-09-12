@@ -63,9 +63,5 @@ module SheetAnimations =
                 if anim.ElapsedTime > anim.Duration then
                     anim.ElapsedTime <- anim.ElapsedTime - anim.Duration
                     SheetAnimation.nextSprite anim
-                State.View.change entity (fun view ->
-                    match view with
-                    | ValueNone      -> ValueNone
-                    | ValueSome view -> ValueSome (SheetAnimation.toView view anim)
-                )
+                State.View.map (SheetAnimation.changeView anim) entity
             )

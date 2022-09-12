@@ -139,7 +139,7 @@ module SheetAnimation =
         else
             if anim.IsLoop then anim.CurrentSprite <- 0
 
-    let toView (view:View) (anim:SheetAnimation) =
+    let changeView (anim:SheetAnimation) (view:View) =
         { view with
             Texture  = anim.Sheet.Texture
             SrcRect = getSourceRect anim }
