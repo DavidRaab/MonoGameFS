@@ -69,23 +69,23 @@ let initModel assets =
     // ECS System
     let box = Entity.init (fun e ->
         e.addPosition (Position.createXY 50f 50f)
-        e.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
+        e.addView     (View.fromSprite assets.Texture.WhiteBox FG2)
     )
 
     let movingBox = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 50f)
-        e.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
+        e.addView     (View.fromSprite assets.Texture.WhiteBox FG2)
     )
 
     let movingBox3 = Entity.initMany 3 (fun idx e ->
         e.addPosition (Position.createXY (150f + (15f * float32 idx)) 50f)
-        e.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
+        e.addView     (View.fromSprite assets.Texture.WhiteBox FG2)
     )
 
     let arrow = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 100f)
         e.addView     (
-            View.fromSprite assets.Texture.Arrow 1f
+            View.fromSprite assets.Texture.Arrow FG1
             |> View.setOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 0.5) () (fun _ dt ->
@@ -103,7 +103,7 @@ let initModel assets =
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
                 box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
-                box.addView     (View.fromSprite assets.Texture.WhiteBox 0f)
+                box.addView     (View.fromSprite assets.Texture.WhiteBox BG1)
             ))
 
 
@@ -206,10 +206,8 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
-    game.spriteBatch.Begin (
-        sortMode = SpriteSortMode.FrontToBack
-    )
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
+    game.spriteBatch.Begin ()
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
     game.spriteBatch.End ()

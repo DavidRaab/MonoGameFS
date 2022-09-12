@@ -29,8 +29,25 @@ type Origin =
     | Bottom
     | BottomRight
 
+type ViewDepth =
+    | BG2
+    | BG1
+    | FG2
+    | FG1
+    | UI2
+    | UI1
+
 module View =
-    let create sprite tint rotation origin scale effect depth = {
+    let create sprite tint rotation origin scale effect depth =
+        let depth =
+            match depth with
+            | BG2 -> 0.1f
+            | BG1 -> 0.2f
+            | FG2 -> 0.3f
+            | FG1 -> 0.4f
+            | UI2 -> 0.5f
+            | UI1 -> 0.6f
+        {
             Sprite   = sprite
             Tint     = tint
             Rotation = rotation

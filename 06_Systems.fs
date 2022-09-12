@@ -13,27 +13,29 @@ type TimeSpan = System.TimeSpan
 // View System draws entity
 module View =
     let draw (sb:SpriteBatch) =
-        // sb.Begin()
-        for entity in Entity.positionsAndView.GetCache() do
-            entity |> State.Position.iter (fun pos  ->
-            entity |> State.View.iter     (fun view ->
-                sb.Draw(
-                    texture              = view.Sprite,
-                    destinationRectangle = Rectangle(
-                        int pos.Position.X,
-                        int pos.Position.Y,
-                        view.Sprite.Width,
-                        view.Sprite.Height
-                    ),
-                    sourceRectangle      = System.Nullable(),
-                    color                = view.Tint,
-                    rotation             = view.Rotation,
-                    origin               = view.Origin,
-                    effects              = view.Effects,
-                    layerDepth           = view.Depth
-                )
-            ))
-        // sb.End()
+        let posAndView = [|
+            for entity in Entity.positionsAndView.GetCache() do
+                match State.Position.get entity, State.View.get entity with
+                | ValueSome p, ValueSome v -> p,v
+                | _                        -> ()
+        |]
+        posAndView |> Array.sortInPlaceBy (fun (p,v) -> v.Depth)
+        for pos,view in posAndView do
+            sb.Draw(
+                texture              = view.Sprite,
+                destinationRectangle = Rectangle(
+                    int pos.Position.X,
+                    int pos.Position.Y,
+                    view.Sprite.Width,
+                    view.Sprite.Height
+                ),
+                sourceRectangle      = System.Nullable(),
+                color                = view.Tint,
+                rotation             = view.Rotation,
+                origin               = view.Origin,
+                effects              = view.Effects,
+                layerDepth           = view.Depth
+            )
 
 // Moves those who should be moved
 module Movement =

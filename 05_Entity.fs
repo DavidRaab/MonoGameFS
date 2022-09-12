@@ -38,7 +38,6 @@ type EntitiesCache<'a when 'a :> ICacheable>(states:seq<'a>) =
         else
             cache
 
-
 module Entity =
     let mutable private counter = 0
     let private entities = ResizeArray<Entity>()
