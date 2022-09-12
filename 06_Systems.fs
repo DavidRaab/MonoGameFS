@@ -22,14 +22,10 @@ module View =
         posAndView |> Array.sortInPlaceBy (fun (p,v) -> v.Layer)
         for pos,view in posAndView do
             sb.Draw(
-                texture              = view.Sprite,
-                destinationRectangle = Rectangle(
-                    int pos.Position.X,
-                    int pos.Position.Y,
-                    view.Sprite.Width,
-                    view.Sprite.Height
-                ),
-                sourceRectangle      = System.Nullable(),
+                texture              = view.Texture,
+                position             = pos.Position,
+                scale                = view.Scale,
+                sourceRectangle      = view.SrcRect,
                 color                = view.Tint,
                 rotation             = view.Rotation,
                 origin               = view.Origin,
@@ -58,4 +54,18 @@ module Timer =
             | Pending    -> ()
             | Finished _ -> state.RemoveAt(idx)
 
-
+module SheetAnimations =
+    let update (deltaTime: TimeSpan) =
+        for entity in State.SheetAnimations.Entities do
+            entity |> State.SheetAnimations.iter (fun anims ->
+                let anim = SheetAnimations.getAnimation anims
+                anim.ElapsedTime <- anim.ElapsedTime + deltaTime
+                if anim.ElapsedTime > anim.Duration then
+                    anim.ElapsedTime <- anim.ElapsedTime - anim.Duration
+                    SheetAnimation.nextSprite anim
+                State.View.change entity (fun view ->
+                    match view with
+                    | ValueNone      -> ValueNone
+                    | ValueSome view -> ValueSome (SheetAnimation.toView view anim)
+                )
+            )

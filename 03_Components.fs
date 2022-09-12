@@ -39,31 +39,45 @@ type ViewLayer =
     | UI1
 
 module View =
-    let create sprite tint rotation origin scale effect layer =
-        let layer =
-            match layer with
+    let layerToFloat layer =
+        match layer with
             | BG2 -> 0.1f
             | BG1 -> 0.2f
             | FG2 -> 0.3f
             | FG1 -> 0.4f
             | UI2 -> 0.5f
             | UI1 -> 0.6f
-        {
-            Sprite   = sprite
-            Tint     = tint
-            Rotation = rotation
-            Origin   = origin
-            Scale    = scale
-            Effects  = effect
-            Layer    = layer
-        }
 
-    let fromSprite sprite layer =
-        create sprite Color.White 0f Vector2.Zero Vector2.Zero SpriteEffects.None layer
+    /// Generates a View from a whole Texture
+    let fromTexture sprite layer = {
+        Texture   = sprite
+        SrcRect  = Rectangle(0,0,sprite.Width,sprite.Height)
+        Tint     = Color.White
+        Rotation = 0f
+        Origin   = Vector2.Zero
+        Scale    = Vector2.One
+        Effects  = SpriteEffects.None
+        Layer    = layerToFloat layer
+    }
 
-    let setOrigin name view =
-        let width  = float32 view.Sprite.Width
-        let height = float32 view.Sprite.Height
+    /// Generates a View from a Sheet by picking the first Sprite
+    let fromSheet sheet layer = {
+        Texture   = sheet.Texture
+        SrcRect  = sheet.Sprites.[0]
+        Tint     = Color.White
+        Rotation = 0f
+        Origin   = Vector2.Zero
+        Scale    = Vector2.One
+        Effects  = SpriteEffects.None
+        Layer    = layerToFloat layer
+    }
+
+    let setScale scale (view:View) =
+        { view with Scale = scale }
+
+    let setOrigin name (view:View) =
+        let width  = float32 view.Texture.Width
+        let height = float32 view.Texture.Height
         let origin =
             let x,y =
                 match name with
@@ -80,7 +94,68 @@ module View =
             Vector2(x,y)
         { view with Origin = origin }
 
-    let sprite (v:View) = v.Sprite
+module Sheet =
+    let fromWidthHeight (texture:Texture2D) width height =
+        let columns = texture.Width  / width
+        let rows    = texture.Height / height
+        let sprites = [|
+            for col=0 to columns-1 do
+            for row=0 to rows-1 do
+                yield Rectangle(col*width, row*height, width, height)
+        |]
+        {Texture = texture; Sprites = sprites }
+
+    let fromColumnsRows (texture:Texture2D) columns rows =
+        let width  = texture.Width  / columns
+        let height = texture.Height / rows
+        let sprites = [|
+            for col=0 to columns-1 do
+            for row=0 to rows-1 do
+                yield Rectangle(col*width, row*height, width, height)
+        |]
+        {Texture = texture; Sprites = sprites }
+
+module SheetAnimation =
+    let create visible (duration:int) isLoop sheet = {
+        IsVisible     = visible
+        Sheet         = sheet
+        CurrentSprite = 0
+        IsLoop        = isLoop
+        ElapsedTime   = TimeSpan.Zero
+        Duration      = TimeSpan.FromMilliseconds duration
+    }
+
+    let reset anim =
+        anim.CurrentSprite <- 0
+        anim.ElapsedTime   <- TimeSpan.Zero
+
+    let getSourceRect anim =
+        anim.Sheet.Sprites.[anim.CurrentSprite]
+
+    let nextSprite anim =
+        let maxSprite = anim.Sheet.Sprites.Length - 1
+        if anim.CurrentSprite < maxSprite then
+            anim.CurrentSprite <- anim.CurrentSprite + 1
+        else
+            if anim.IsLoop then anim.CurrentSprite <- 0
+
+    let toView (view:View) (anim:SheetAnimation) =
+        { view with
+            Texture  = anim.Sheet.Texture
+            SrcRect = getSourceRect anim }
+
+module SheetAnimations =
+    let create active animations = {
+        Animations  = Map animations
+        Active      = active
+    }
+
+    let getAnimation anims =
+        anims.Animations[anims.Active]
+
+    let setAnimation active anims =
+        anims.Active <- active
+        SheetAnimation.reset (getAnimation anims)
 
 module Movement =
     let create dir =

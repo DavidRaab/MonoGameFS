@@ -12,7 +12,8 @@ type Position = {
 }
 
 type View = {
-    Sprite:   Texture2D
+    Texture:  Texture2D
+    SrcRect:  Rectangle
     Tint:     Color
     Rotation: float32
     Origin:   Vector2
@@ -23,4 +24,23 @@ type View = {
 
 type Movement = {
     Direction : Vector2
+}
+
+type Sheet = {
+    Texture: Texture2D
+    Sprites: Rectangle array
+}
+
+type SheetAnimation = {
+    mutable IsVisible:     bool
+    Sheet:                 Sheet
+    mutable CurrentSprite: int
+    IsLoop:                bool
+    mutable ElapsedTime:   TimeSpan
+    Duration:              TimeSpan
+}
+
+type SheetAnimations = {
+    Animations:     Map<string,SheetAnimation>
+    mutable Active: string
 }

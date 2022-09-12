@@ -50,8 +50,8 @@ type State<'Component>() =
             onEntitiesChanged.Trigger ()
 
 module State =
-    let Position = State<Position>()
-    let View     = State<View>()
-    let Movement = State<Movement>()
-
+    let Position        = State<Position>()
+    let View            = State<View>()
+    let Movement        = State<Movement>()
+    let SheetAnimations = State<SheetAnimations>()
 

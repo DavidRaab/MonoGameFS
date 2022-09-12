@@ -13,8 +13,9 @@ type Keys = Input.Keys
 
 // Assets
 type Assets = {
-    Font:    Fonts
-    Texture: Textures
+    Font:       Fonts
+    Texture:    Textures
+    KnightIdle: Sheet
 }
 and Textures = {
     Arrow:    Texture2D
@@ -49,16 +50,20 @@ let init (game:MyGame) =
 
 // Loading Assets
 let loadAssets (game:MyGame) =
+    let load     str = game.Content.Load<Texture2D>(str)
+    let loadFont str = game.Content.Load<SpriteFont>(str)
+
     let gd = game.GraphicsDevice
     let assets = {
         Font = {
-            Default = game.Content.Load<SpriteFont>("Font")
+            Default = loadFont "Font"
         }
         Texture = {
-            Arrow    = game.Content.Load<Texture2D>("arrow")
+            Arrow    = load "arrow"
             WhiteBox = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
-            Pixel    = Texture2D.create gd 1 1 [|Color.White|]
+            Pixel    = Texture2D.create gd  1  1 [|Color.White|]
         }
+        KnightIdle = Sheet.fromColumnsRows (load "FreeKnight/Idle") 10 1
     }
 
     assets
@@ -69,23 +74,23 @@ let initModel assets =
     // ECS System
     let box = Entity.init (fun e ->
         e.addPosition (Position.createXY 50f 50f)
-        e.addView     (View.fromSprite assets.Texture.WhiteBox FG2)
+        e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
     )
 
     let movingBox = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 50f)
-        e.addView     (View.fromSprite assets.Texture.WhiteBox FG2)
+        e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
     )
 
     let movingBox3 = Entity.initMany 3 (fun idx e ->
         e.addPosition (Position.createXY (150f + (15f * float32 idx)) 50f)
-        e.addView     (View.fromSprite assets.Texture.WhiteBox FG2)
+        e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
     )
 
     let arrow = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 100f)
         e.addView     (
-            View.fromSprite assets.Texture.Arrow FG1
+            View.fromTexture assets.Texture.Arrow FG1
             |> View.setOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 0.5) () (fun _ dt ->
@@ -97,13 +102,33 @@ let initModel assets =
         ))
     )
 
+    let knight = Entity.init (fun e ->
+        e.addPosition    (Position.createXY 200f 200f)
+        e.addView        (View.fromSheet assets.KnightIdle FG1)
+        e.addSheetAnimations (
+            SheetAnimations.create "Idle" [
+                "Idle", SheetAnimation.create true 100 true assets.KnightIdle
+            ]
+        )
+    )
+
+    let knight = Entity.init (fun e ->
+        e.addPosition    (Position.createXY 200f 100f)
+        e.addView        (View.fromSheet assets.KnightIdle FG1 |> View.setScale (Vector2.create 3f 3f))
+        e.addSheetAnimations (
+            SheetAnimations.create "Idle" [
+                "Idle", SheetAnimation.create true 100 true assets.KnightIdle
+            ]
+        )
+    )
+
     let boxes = ResizeArray<_>()
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
                 box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
-                box.addView     (View.fromSprite assets.Texture.WhiteBox BG1)
+                box.addView     (View.fromTexture assets.Texture.WhiteBox BG1)
             ))
 
 
@@ -133,6 +158,7 @@ let fixedUpdateTiming = TimeSpan.FromSeconds (1.0 / 60.0)
 let fixedUpdate model deltaTime =
     Systems.Movement.update deltaTime
     Systems.Timer.update deltaTime
+    Systems.SheetAnimations.update deltaTime
 
     if Keyboard.isPressed Keys.Space then
         // Toggles between automatic moving and stopping

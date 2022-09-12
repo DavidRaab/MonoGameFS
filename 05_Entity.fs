@@ -64,22 +64,23 @@ module Entity =
         entities :> seq<Entity>
 
     let positionsAndView = EntitiesCache([
-            Cache.create State.Position
-            Cache.create State.View
-        ])
+        Cache.create State.Position
+        Cache.create State.View
+    ])
 
     let positionsAndMovement = EntitiesCache([
-            Cache.create State.Position
-            Cache.create State.Movement
-        ])
+        Cache.create State.Position
+        Cache.create State.Movement
+    ])
 
 [<AutoOpen>]
 module EntityExtension =
     type Entity with
-        member this.addPosition pos   = State.Position.add pos this
-        member this.addView view      = State.View.add view this
-        member this.addMovement   mov = State.Movement.add mov this
-        member this.deletePosition () = State.Position.delete this
-        member this.deleteView ()     = State.View.delete this
-        member this.deleteMovement () = State.Movement.delete this
-
+        member this.addPosition pos          = State.Position.add pos this
+        member this.addView view             = State.View.add view this
+        member this.addMovement mov          = State.Movement.add mov this
+        member this.deletePosition ()        = State.Position.delete this
+        member this.deleteView ()            = State.View.delete this
+        member this.deleteMovement ()        = State.Movement.delete this
+        member this.addSheetAnimations anim  = State.SheetAnimations.add anim this
+        member this.deleteSheetAnimations () = State.SheetAnimations.delete this
