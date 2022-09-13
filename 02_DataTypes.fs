@@ -12,14 +12,15 @@ type Position = {
 }
 
 type View = {
-    Texture:  Texture2D
-    SrcRect:  Rectangle
-    Tint:     Color
-    Rotation: float32
-    Origin:   Vector2
-    Scale:    Vector2
-    Effects:  SpriteEffects
-    Layer:    float32
+    Texture:   Texture2D
+    SrcRect:   Rectangle
+    IsVisible: bool
+    Tint:      Color
+    Rotation:  float32
+    Origin:    Vector2
+    Scale:     Vector2
+    Effects:   SpriteEffects
+    Layer:     float32
 }
 
 type Movement = {
@@ -32,7 +33,6 @@ type Sheet = {
 }
 
 type SheetAnimation = {
-    mutable IsVisible:     bool
     Sheet:                 Sheet
     mutable CurrentSprite: int
     IsLoop:                bool

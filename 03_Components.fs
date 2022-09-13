@@ -51,25 +51,31 @@ module View =
     /// Generates a View from a whole Texture
     let fromTexture sprite layer = {
         Texture   = sprite
-        SrcRect  = Rectangle(0,0,sprite.Width,sprite.Height)
-        Tint     = Color.White
-        Rotation = 0f
-        Origin   = Vector2.Zero
-        Scale    = Vector2.One
-        Effects  = SpriteEffects.None
-        Layer    = layerToFloat layer
+        SrcRect   = Rectangle(0,0,sprite.Width,sprite.Height)
+        IsVisible = true
+        Tint      = Color.White
+        Rotation  = 0f
+        Origin    = Vector2.Zero
+        Scale     = Vector2.One
+        Effects   = SpriteEffects.None
+        Layer     = layerToFloat layer
     }
 
     /// Generates a View from a Sheet by picking the first Sprite
-    let fromSheet sheet layer = {
+    let fromSheet sheet layer index = {
         Texture   = sheet.Texture
-        SrcRect  = sheet.Sprites.[0]
-        Tint     = Color.White
-        Rotation = 0f
-        Origin   = Vector2.Zero
-        Scale    = Vector2.One
-        Effects  = SpriteEffects.None
-        Layer    = layerToFloat layer
+        SrcRect   =
+            Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
+                eprintfn "Index out of Range, using (0) as default for Sheet %A" sheet
+                Array.get sheet.Sprites index
+            )
+        IsVisible = true
+        Tint      = Color.White
+        Rotation  = 0f
+        Origin    = Vector2.Zero
+        Scale     = Vector2.One
+        Effects   = SpriteEffects.None
+        Layer     = layerToFloat layer
     }
 
     let setScale scale (view:View) =
@@ -99,8 +105,8 @@ module Sheet =
         let columns = texture.Width  / width
         let rows    = texture.Height / height
         let sprites = [|
-            for col=0 to columns-1 do
             for row=0 to rows-1 do
+            for col=0 to columns-1 do
                 yield Rectangle(col*width, row*height, width, height)
         |]
         {Texture = texture; Sprites = sprites }
@@ -109,15 +115,25 @@ module Sheet =
         let width  = texture.Width  / columns
         let height = texture.Height / rows
         let sprites = [|
-            for col=0 to columns-1 do
             for row=0 to rows-1 do
+            for col=0 to columns-1 do
                 yield Rectangle(col*width, row*height, width, height)
         |]
         {Texture = texture; Sprites = sprites }
 
+    let fromSheet sheet idxs =
+        let max = sheet.Sprites.Length
+        { sheet with
+            Sprites = [|
+                for idx in idxs do
+                    if idx < max
+                    then yield sheet.Sprites.[idx]
+                    else eprintfn "idx %d out of range for Sheet %A" idx sheet
+            |]
+        }
+
 module SheetAnimation =
     let create visible (duration:int) isLoop sheet = {
-        IsVisible     = visible
         Sheet         = sheet
         CurrentSprite = 0
         IsLoop        = isLoop
@@ -141,7 +157,7 @@ module SheetAnimation =
 
     let changeView (anim:SheetAnimation) (view:View) =
         { view with
-            Texture  = anim.Sheet.Texture
+            Texture = anim.Sheet.Texture
             SrcRect = getSourceRect anim }
 
 module SheetAnimations =

@@ -21,17 +21,18 @@ module View =
         |]
         posAndView |> Array.sortInPlaceBy (fun (p,v) -> v.Layer)
         for pos,view in posAndView do
-            sb.Draw(
-                texture              = view.Texture,
-                position             = pos.Position,
-                scale                = view.Scale,
-                sourceRectangle      = view.SrcRect,
-                color                = view.Tint,
-                rotation             = view.Rotation,
-                origin               = view.Origin,
-                effects              = view.Effects,
-                layerDepth           = view.Layer
-            )
+            if view.IsVisible then
+                sb.Draw(
+                    texture         = view.Texture,
+                    position        = pos.Position,
+                    scale           = view.Scale,
+                    sourceRectangle = view.SrcRect,
+                    color           = view.Tint,
+                    rotation        = view.Rotation,
+                    origin          = view.Origin,
+                    effects         = view.Effects,
+                    layerDepth      = view.Layer
+                )
 
 // Moves those who should be moved
 module Movement =

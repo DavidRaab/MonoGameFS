@@ -104,7 +104,7 @@ let initModel assets =
 
     let knight = Entity.init (fun e ->
         e.addPosition    (Position.createXY 200f 200f)
-        e.addView        (View.fromSheet assets.KnightIdle FG1)
+        e.addView        (View.fromSheet assets.KnightIdle FG1 0)
         e.addSheetAnimations (
             SheetAnimations.create "Idle" [
                 "Idle", SheetAnimation.create true 100 true assets.KnightIdle
@@ -114,7 +114,7 @@ let initModel assets =
 
     let knight = Entity.init (fun e ->
         e.addPosition    (Position.createXY 200f 100f)
-        e.addView        (View.fromSheet assets.KnightIdle FG1 |> View.setScale (Vector2.create 3f 3f))
+        e.addView        (View.fromSheet assets.KnightIdle FG1 0 |> View.setScale (Vector2.create 3f 3f))
         e.addSheetAnimations (
             SheetAnimations.create "Idle" [
                 "Idle", SheetAnimation.create true 100 true assets.KnightIdle
