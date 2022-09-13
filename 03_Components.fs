@@ -166,12 +166,24 @@ module SheetAnimations =
         Active      = active
     }
 
+    let hasAnimation str anims =
+        Seq.contains str anims.Animations.Keys
+
     let getAnimation anims =
         anims.Animations[anims.Active]
 
+    let getValidAnimations anims = [
+        for animationName in anims.Animations.Keys do
+            yield animationName
+    ]
+
     let setAnimation active anims =
-        anims.Active <- active
-        SheetAnimation.reset (getAnimation anims)
+        if hasAnimation active anims then
+            anims.Active <- active
+            SheetAnimation.reset (getAnimation anims)
+        else
+            eprintfn "No Animation \"%s\" avaible Animations %A at\n%s"
+                active (getValidAnimations anims) (stackTrace 1)
 
 module Movement =
     let create dir =

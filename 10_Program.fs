@@ -13,11 +13,16 @@ type Keys = Input.Keys
 
 // Assets
 type Assets = {
-    Font:       Fonts
-    Texture:    Textures
-    KnightIdle: Sheet
+    Font:    Fonts
+    Texture: Textures
+    Knight:  Knight
+}
+and Knight = {
+    Attack: Sheet
+    Idle:   Sheet
 }
 and Textures = {
+    Missing:  Texture2D
     Arrow:    Texture2D
     Pixel:    Texture2D
     WhiteBox: Texture2D
@@ -28,10 +33,7 @@ and Fonts = {
 
 // Model
 type Model = {
-    Arrow:      Entity
-    Box:        Entity
-    MovingBox:  Entity
-    MovingBox3: list<Entity>
+    Knight: Entity
 }
 
 // Type Alias for my game
@@ -59,11 +61,15 @@ let loadAssets (game:MyGame) =
             Default = loadFont "Font"
         }
         Texture = {
+            Missing  = Texture2D.create gd  1  1 [|Color.Pink|]
             Arrow    = load "arrow"
             WhiteBox = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
             Pixel    = Texture2D.create gd  1  1 [|Color.White|]
         }
-        KnightIdle = Sheet.fromColumnsRows (load "FreeKnight/Idle") 10 1
+        Knight = {
+            Attack = Sheet.fromColumnsRows (load "FreeKnight/Attack") 4 1
+            Idle   = Sheet.fromColumnsRows (load "FreeKnight/Idle")  10 1
+        }
     }
 
     assets
@@ -74,16 +80,6 @@ let initModel assets =
     // ECS System
     let box = Entity.init (fun e ->
         e.addPosition (Position.createXY 50f 50f)
-        e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
-    )
-
-    let movingBox = Entity.init (fun e ->
-        e.addPosition (Position.createXY 100f 50f)
-        e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
-    )
-
-    let movingBox3 = Entity.initMany 3 (fun idx e ->
-        e.addPosition (Position.createXY (150f + (15f * float32 idx)) 50f)
         e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
     )
 
@@ -104,20 +100,22 @@ let initModel assets =
 
     let knight = Entity.init (fun e ->
         e.addPosition    (Position.createXY 200f 200f)
-        e.addView        (View.fromSheet assets.KnightIdle FG1 0)
+        e.addView        (View.fromSheet assets.Knight.Idle FG1 0)
         e.addSheetAnimations (
             SheetAnimations.create "Idle" [
-                "Idle", SheetAnimation.create true 100 true assets.KnightIdle
+                "Idle",   SheetAnimation.create true 100 true assets.Knight.Idle
+                "Attack", SheetAnimation.create true 100 true assets.Knight.Attack
             ]
         )
     )
 
     let knight = Entity.init (fun e ->
         e.addPosition    (Position.createXY 200f 100f)
-        e.addView        (View.fromSheet assets.KnightIdle FG1 0 |> View.setScale (Vector2.create 3f 3f))
+        e.addView        (View.fromSheet assets.Knight.Idle FG1 0 |> View.setScale (Vector2.create 3f 3f))
         e.addSheetAnimations (
             SheetAnimations.create "Idle" [
-                "Idle", SheetAnimation.create true 100 true assets.KnightIdle
+                "Idle",   SheetAnimation.create true 100 true assets.Knight.Idle
+                "Attack", SheetAnimation.create true 100 true assets.Knight.Attack
             ]
         )
     )
@@ -145,10 +143,7 @@ let initModel assets =
     ))
 
     let gameState = {
-        Arrow      = arrow
-        Box        = box
-        MovingBox  = movingBox
-        MovingBox3 = movingBox3
+        Knight = knight
     }
     gameState
 
@@ -161,23 +156,18 @@ let fixedUpdate model deltaTime =
     Systems.SheetAnimations.update deltaTime
 
     if Keyboard.isPressed Keys.Space then
-        // Toggles between automatic moving and stopping
-        let toggleMovement = function
-            | ValueNone   -> ValueSome (Movement.create (Vector2.right 50f))
-            | ValueSome x -> ValueNone
-        State.Movement.change model.MovingBox toggleMovement
-        List.iter (fun e -> State.Movement.change e toggleMovement) model.MovingBox3
+        model.Knight |> State.SheetAnimations.iter (fun anims ->
+            SheetAnimations.setAnimation "Attack" anims
+        )
 
     if Keyboard.isKeyDown Keys.Right then
-        State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2.right 100f, deltaTime))
-            model.MovingBox.addPosition pos
+        model.Knight |> State.Position.map (fun pos ->
+            Position.create (pos.Position + Vector2.Multiply(Vector2.right 100f, deltaTime))
         )
 
     if Keyboard.isKeyDown Keys.Left then
-        State.Position.get model.MovingBox |> ValueOption.iter (fun pos ->
-            let pos = Position.create (pos.Position + Vector2.Multiply(Vector2.left 100f, deltaTime))
-            model.MovingBox.addPosition pos
+        model.Knight |> State.Position.map (fun pos ->
+            Position.create (pos.Position + Vector2.Multiply(Vector2.left 100f, deltaTime))
         )
 
     // Resets the Keyboard State

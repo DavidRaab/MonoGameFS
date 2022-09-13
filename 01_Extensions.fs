@@ -8,6 +8,18 @@ type TimeSpan          = System.TimeSpan
 
 [<AutoOpen>]
 module Extensions =
+    let stackTrace (skip:int) =
+        let skip = if skip < 0 then 1 else skip+1
+        let st   = System.Diagnostics.StackTrace(skip, true)
+        "  " + System.String.Join("\n  ",
+            st.GetFrames() |> Array.map (fun frame ->
+                sprintf "%s:%d %s"
+                    (System.IO.Path.GetFileName(frame.GetFileName()))
+                    (frame.GetFileLineNumber())
+                    (frame.GetMethod().Name)
+            )
+        )
+
     module Texture2D =
         let create gd width height data =
             let tex = new Texture2D(gd, width, height)
