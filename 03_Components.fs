@@ -100,6 +100,11 @@ module View =
             Vector2(x,y)
         { view with Origin = origin }
 
+    let flipHorizontal b view =
+        match b with
+        | true  -> { view with Effects = SpriteEffects.FlipHorizontally }
+        | false -> { view with Effects = SpriteEffects.None }
+
 module Sheet =
     let fromWidthHeight (texture:Texture2D) width height =
         let columns = texture.Width  / width

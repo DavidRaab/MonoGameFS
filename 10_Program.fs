@@ -157,18 +157,23 @@ let fixedUpdate model deltaTime =
 
     if Keyboard.isPressed Keys.Space then
         model.Knight |> State.SheetAnimations.iter (fun anims ->
-            SheetAnimations.setAnimation "Attack" anims
+            match anims.Active with
+            | "Attack" -> SheetAnimations.setAnimation "Idle"   anims
+            | "Idle"   -> SheetAnimations.setAnimation "Attack" anims
+            | _        -> ()
         )
 
     if Keyboard.isKeyDown Keys.Right then
         model.Knight |> State.Position.map (fun pos ->
             Position.create (pos.Position + Vector2.Multiply(Vector2.right 100f, deltaTime))
         )
+        model.Knight |> State.View.map (View.flipHorizontal false)
 
     if Keyboard.isKeyDown Keys.Left then
         model.Knight |> State.Position.map (fun pos ->
             Position.create (pos.Position + Vector2.Multiply(Vector2.left 100f, deltaTime))
         )
+        model.Knight |> State.View.map (View.flipHorizontal true)
 
     // Resets the Keyboard State
     Keyboard.nextState ()
