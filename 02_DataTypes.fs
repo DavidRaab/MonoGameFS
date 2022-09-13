@@ -8,7 +8,7 @@ type Entity =
     Entity of int
 
 type Position = {
-    Position : Vector2
+    Position: Vector2
 }
 
 type View = {

@@ -20,6 +20,8 @@ type Assets = {
 and Knight = {
     Attack: Sheet
     Idle:   Sheet
+    Run:    Sheet
+    Crouch: Sheet
 }
 and Textures = {
     Missing:  Texture2D
@@ -69,6 +71,8 @@ let loadAssets (game:MyGame) =
         Knight = {
             Attack = Sheet.fromColumnsRows (load "FreeKnight/Attack") 4 1
             Idle   = Sheet.fromColumnsRows (load "FreeKnight/Idle")  10 1
+            Run    = Sheet.fromColumnsRows (load "FreeKnight/Run")   10 1
+            Crouch = Sheet.fromTexture     (load "FreeKnight/Crouch")
         }
     }
 
@@ -99,23 +103,18 @@ let initModel assets =
     )
 
     let knight = Entity.init (fun e ->
-        e.addPosition    (Position.createXY 200f 200f)
-        e.addView        (View.fromSheet assets.Knight.Idle FG1 0)
-        e.addSheetAnimations (
-            SheetAnimations.create "Idle" [
-                "Idle",   SheetAnimation.create true 100 true assets.Knight.Idle
-                "Attack", SheetAnimation.create true 100 true assets.Knight.Attack
-            ]
+        e.addPosition    (Position.createXY 200f 240f)
+        e.addView        (
+            View.fromSheet assets.Knight.Idle FG1 0
+            |> View.setScale (Vector2.create 3f 3f)
+            |> View.setOrigin Top
         )
-    )
-
-    let knight = Entity.init (fun e ->
-        e.addPosition    (Position.createXY 200f 100f)
-        e.addView        (View.fromSheet assets.Knight.Idle FG1 0 |> View.setScale (Vector2.create 3f 3f))
         e.addSheetAnimations (
             SheetAnimations.create "Idle" [
-                "Idle",   SheetAnimation.create true 100 true assets.Knight.Idle
-                "Attack", SheetAnimation.create true 100 true assets.Knight.Attack
+                "Idle",   SheetAnimation.create 100 true assets.Knight.Idle
+                "Attack", SheetAnimation.create  50 true assets.Knight.Attack
+                "Run",    SheetAnimation.create 100 true assets.Knight.Run
+                "Crouch", SheetAnimation.create   0 true assets.Knight.Crouch
             ]
         )
     )
@@ -147,6 +146,22 @@ let initModel assets =
     }
     gameState
 
+type KnightState =
+    | Attack of elapsed:TimeSpan * duration:TimeSpan
+    | Left
+    | Right
+    | Crouch
+    | Idle
+
+let statePriority state =
+    match state with
+    | Attack _ -> 4
+    | Left     -> 3
+    | Right    -> 3
+    | Crouch   -> 2
+    | Idle     -> 1
+
+let mutable knightState = Idle
 
 // A Fixed Update implementation that tuns at the specified fixedUpdateTiming
 let fixedUpdateTiming = TimeSpan.FromSeconds (1.0 / 60.0)
@@ -155,25 +170,50 @@ let fixedUpdate model deltaTime =
     Systems.Timer.update deltaTime
     Systems.SheetAnimations.update deltaTime
 
-    if Keyboard.isPressed Keys.Space then
-        model.Knight |> State.SheetAnimations.iter (fun anims ->
-            match anims.Active with
-            | "Attack" -> SheetAnimations.setAnimation "Idle"   anims
-            | "Idle"   -> SheetAnimations.setAnimation "Attack" anims
-            | _        -> ()
-        )
+    let nextKnightState previousState =
+        let isAttack =
+            if Keyboard.isPressed Keys.Space
+            then Attack (TimeSpan.Zero, TimeSpan.FromSeconds 0.2)
+            else Idle
+        let isLeft      = if Keyboard.isKeyDown Keys.Left  then Left   else Idle
+        let isRight     = if Keyboard.isKeyDown Keys.Right then Right  else Idle
+        let isCrouch    = if Keyboard.isKeyDown Keys.Down  then Crouch else Idle
+        let wantedState = List.maxBy statePriority [isAttack;isLeft;isRight;isCrouch]
 
-    if Keyboard.isKeyDown Keys.Right then
-        model.Knight |> State.Position.map (fun pos ->
-            Position.create (pos.Position + Vector2.Multiply(Vector2.right 100f, deltaTime))
-        )
-        model.Knight |> State.View.map (View.flipHorizontal false)
+        let setAnim name =
+            model.Knight |> State.SheetAnimations.iter (fun anims ->
+                SheetAnimations.setAnimation name anims
+            )
 
-    if Keyboard.isKeyDown Keys.Left then
-        model.Knight |> State.Position.map (fun pos ->
-            Position.create (pos.Position + Vector2.Multiply(Vector2.left 100f, deltaTime))
-        )
-        model.Knight |> State.View.map (View.flipHorizontal true)
+        let setState state =
+            match state with
+            | Attack (e,d) ->
+                setAnim "Attack"; Attack (e,d)
+            | Crouch       ->
+                setAnim "Crouch"; Crouch
+            | Left         ->
+                setAnim "Run";
+                model.Knight |> State.View.map (View.flipHorizontal true)
+                model.Knight |> State.Position.map (Position.add (Vector2.Multiply(Vector2.left 200f, deltaTime)))
+                Left
+            | Right        ->
+                setAnim "Run";
+                model.Knight |> State.View.map (View.flipHorizontal false)
+                model.Knight |> State.Position.map (Position.add (Vector2.Multiply(Vector2.right 200f, deltaTime)))
+                Right
+            | Idle ->
+                setAnim "Idle";
+                Idle
+
+        match previousState, wantedState with
+        | Attack (e,d), wantedState ->
+            let elapsed = e + deltaTime
+            if elapsed >= d
+            then setState wantedState
+            else Attack (elapsed,d)
+        | _ , wanted  -> setState wanted
+
+    knightState <- nextKnightState knightState
 
     // Resets the Keyboard State
     Keyboard.nextState ()

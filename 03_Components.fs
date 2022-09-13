@@ -61,13 +61,16 @@ module View =
         Layer     = layerToFloat layer
     }
 
-    /// Generates a View from a Sheet by picking the first Sprite
+    /// Generates a View from a Sheet by using the selected Sprite
     let fromSheet sheet layer index = {
         Texture   = sheet.Texture
         SrcRect   =
             Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
-                eprintfn "Index out of Range, using (0) as default for Sheet %A" sheet
-                Array.get sheet.Sprites index
+                eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
+                    index (sheet.Sprites.Length-1) (stackTrace 1)
+                if   sheet.Sprites.Length > 0
+                then Array.get sheet.Sprites 0
+                else Rectangle(0,0,64,64)
             )
         IsVisible = true
         Tint      = Color.White
@@ -82,8 +85,8 @@ module View =
         { view with Scale = scale }
 
     let setOrigin name (view:View) =
-        let width  = float32 view.Texture.Width
-        let height = float32 view.Texture.Height
+        let width  = float32 view.SrcRect.Width
+        let height = float32 view.SrcRect.Height
         let origin =
             let x,y =
                 match name with
@@ -100,10 +103,18 @@ module View =
             Vector2(x,y)
         { view with Origin = origin }
 
+    let setOriginWith name f (view:View) =
+        let view = setOrigin name view
+        { view with Origin = f view.Origin }
+
     let flipHorizontal b view =
         match b with
         | true  -> { view with Effects = SpriteEffects.FlipHorizontally }
         | false -> { view with Effects = SpriteEffects.None }
+
+    let show (view:View) =
+        printfn "%A" view
+        view
 
 module Sheet =
     let fromWidthHeight (texture:Texture2D) width height =
@@ -131,14 +142,21 @@ module Sheet =
         { sheet with
             Sprites = [|
                 for idx in idxs do
-                    if idx < max
-                    then yield sheet.Sprites.[idx]
-                    else eprintfn "idx %d out of range for Sheet %A" idx sheet
+                    if idx < max then
+                        yield sheet.Sprites.[idx]
+                    else
+                        eprintfn "idx %d out of range. Max index is [%d] at\n%s"
+                            idx (sheet.Sprites.Length-1) (stackTrace 0)
             |]
         }
 
+    let fromTexture (texture:Texture2D) = {
+        Texture = texture;
+        Sprites = [| Rectangle(0,0,texture.Width,texture.Height) |]
+    }
+
 module SheetAnimation =
-    let create visible (duration:int) isLoop sheet = {
+    let create (duration:int) isLoop sheet = {
         Sheet         = sheet
         CurrentSprite = 0
         IsLoop        = isLoop
@@ -184,10 +202,11 @@ module SheetAnimations =
 
     let setAnimation active anims =
         if hasAnimation active anims then
-            anims.Active <- active
-            SheetAnimation.reset (getAnimation anims)
+            if anims.Active <> active then
+                anims.Active <- active
+                SheetAnimation.reset (getAnimation anims)
         else
-            eprintfn "No Animation \"%s\" avaible Animations %A at\n%s"
+            eprintfn "No Animation \"%s\" available Animations %A at\n%s"
                 active (getValidAnimations anims) (stackTrace 1)
 
 module Movement =
