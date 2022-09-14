@@ -205,6 +205,9 @@ module SheetAnimation =
         let maxSprite = anim.Sheet.Sprites.Length
         if anim.IsLoop then
             anim.CurrentSprite <- (anim.CurrentSprite + 1) % maxSprite
+        else
+            if anim.CurrentSprite < maxSprite-1 then
+                anim.CurrentSprite <- anim.CurrentSprite + 1
 
     let changeView (anim:SheetAnimation) (view:View) =
         { view with
@@ -241,8 +244,8 @@ module SheetAnimations =
     let setAnimation active anims =
         if hasAnimation active anims then
             if anims.Active <> active then
-                anims.Active <- active
                 SheetAnimation.reset (getCurrentAnimation anims)
+                anims.Active <- active
         else
             eprintfn "No Animation \"%s\" available Animations %A at\n%s"
                 active (getAnimationsNames anims) (stackTrace 1)

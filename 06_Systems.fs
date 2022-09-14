@@ -64,5 +64,9 @@ module SheetAnimations =
                 if anim.ElapsedTime > anim.Duration then
                     anim.ElapsedTime <- anim.ElapsedTime - anim.Duration
                     SheetAnimation.nextSprite anim
+                // TODO: Optimization
+                //   Theoretically only must execute when nextSprite was called
+                //   but then the first frame when setting a new animation is skipped.
+                //   Could be mutable or setting a new animation must be revisited.
                 State.View.map (SheetAnimation.changeView anim) entity
             )

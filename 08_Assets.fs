@@ -32,9 +32,9 @@ module Assets =
             Pixel    = texture 1  1 [|Color.White|]
         }
         Knight = SheetAnimations.create "Idle" [
-            "Idle",   SheetAnimation.create 100 true (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Idle"))
-            "Attack", SheetAnimation.create  50 true (Sheet.fromColumnsRows  4 1 (load "FreeKnight/Attack"))
-            "Run",    SheetAnimation.create 100 true (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Run"))
-            "Crouch", SheetAnimation.create   0 true (Sheet.fromTexture          (load "FreeKnight/Crouch"))
+            "Idle",   SheetAnimation.create 100 true  (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Idle"))
+            "Attack", SheetAnimation.create  50 false (Sheet.fromColumnsRows  4 1 (load "FreeKnight/Attack"))
+            "Run",    SheetAnimation.create 100 true  (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Run"))
+            "Crouch", SheetAnimation.create   0 false (Sheet.fromTexture          (load "FreeKnight/Crouch"))
         ]
     }
