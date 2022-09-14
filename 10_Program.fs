@@ -5,79 +5,17 @@ open MyGame.State
 open MyGame.Entity
 open MyGame.Utility
 open MyGame.Timer
+open MyGame.Assets
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 // Only load the Keys -- I have my own Input Implementation on top of MonoGame
 type Keys = Input.Keys
 
-// Assets
-type Assets = {
-    Font:    Fonts
-    Texture: Textures
-    Knight:  Knight
-}
-and Knight = {
-    Attack: Sheet
-    Idle:   Sheet
-    Run:    Sheet
-    Crouch: Sheet
-}
-and Textures = {
-    Missing:  Texture2D
-    Arrow:    Texture2D
-    Pixel:    Texture2D
-    WhiteBox: Texture2D
-}
-and Fonts = {
-    Default: SpriteFont
-}
-
 // Model
 type Model = {
     Knight: Entity
 }
-
-// Type Alias for my game
-type MyGame = MonoGame<Assets,Model>
-
-
-// Initialization of the Game
-let init (game:MyGame) =
-    game.Graphics.SynchronizeWithVerticalRetrace <- false
-    game.IsFixedTimeStep       <- false
-    game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
-    game.Content.RootDirectory <- "Content"
-    game.IsMouseVisible        <- true
-    game.SetResolution 854 480
-
-
-// Loading Assets
-let loadAssets (game:MyGame) =
-    let load     str = game.Content.Load<Texture2D>(str)
-    let loadFont str = game.Content.Load<SpriteFont>(str)
-
-    let gd = game.GraphicsDevice
-    let assets = {
-        Font = {
-            Default = loadFont "Font"
-        }
-        Texture = {
-            Missing  = Texture2D.create gd  1  1 [|Color.Pink|]
-            Arrow    = load "arrow"
-            WhiteBox = Texture2D.create gd 10 10 (Array.replicate 100 Color.White)
-            Pixel    = Texture2D.create gd  1  1 [|Color.White|]
-        }
-        Knight = {
-            Attack = Sheet.fromColumnsRows (load "FreeKnight/Attack") 4 1
-            Idle   = Sheet.fromColumnsRows (load "FreeKnight/Idle")  10 1
-            Run    = Sheet.fromColumnsRows (load "FreeKnight/Run")   10 1
-            Crouch = Sheet.fromTexture     (load "FreeKnight/Crouch")
-        }
-    }
-
-    assets
-
 
 // Initialize the Game Model
 let initModel assets =
@@ -220,6 +158,8 @@ let fixedUpdate model deltaTime =
 
     model
 
+// Type Alias for my game
+type MyGame = MonoGame<Assets,Model>
 
 let mutable fixedUpdateElapsedTime = TimeSpan.Zero
 let update (model:Model) (gameTime:GameTime) (game:MyGame) =
@@ -286,6 +226,26 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
         layerDepth = 0f
     )
     *)
+
+
+
+// Initialization of the Game
+let init (game:MyGame) =
+    game.Graphics.SynchronizeWithVerticalRetrace <- false
+    game.IsFixedTimeStep       <- false
+    game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
+    game.Content.RootDirectory <- "Content"
+    game.IsMouseVisible        <- true
+    game.SetResolution 854 480
+
+
+// Loading Assets
+let loadAssets (game:MyGame) =
+    let load     str = game.Content.Load<Texture2D>(str)
+    let loadFont str = game.Content.Load<SpriteFont>(str)
+    let gd           = game.GraphicsDevice
+    let texture      = Texture2D.create gd
+    Assets.load load loadFont texture
 
 // Run MonoGame Application
 [<EntryPoint;System.STAThread>]
