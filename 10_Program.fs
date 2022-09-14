@@ -103,9 +103,10 @@ let mutable knightState = Idle
 
 // A Fixed Update implementation that tuns at the specified fixedUpdateTiming
 let fixedUpdateTiming = TimeSpan.FromSeconds (1.0 / 60.0)
-let fixedUpdate model deltaTime =
-    Systems.Movement.update deltaTime
-    Systems.Timer.update deltaTime
+let fixedUpdate model (deltaTime:TimeSpan) =
+    let fDeltaTime = float32 deltaTime.TotalSeconds
+    Systems.Movement.update        deltaTime
+    Systems.Timer.update           deltaTime
     Systems.SheetAnimations.update deltaTime
 
     let nextKnightState previousState =
@@ -131,13 +132,13 @@ let fixedUpdate model deltaTime =
                 setAnim "Crouch"; Crouch
             | Left         ->
                 setAnim "Run";
-                model.Knight |> State.View.map (View.flipHorizontal true)
-                model.Knight |> State.Position.map (Position.add (Vector2.Multiply(Vector2.left 200f, deltaTime)))
+                model.Knight |> State.View.iter     (View.flipHorizontal true)
+                model.Knight |> State.Position.iter (Position.addX (-200f * fDeltaTime))
                 Left
             | Right        ->
                 setAnim "Run";
-                model.Knight |> State.View.map (View.flipHorizontal false)
-                model.Knight |> State.Position.map (Position.add (Vector2.Multiply(Vector2.right 200f, deltaTime)))
+                model.Knight |> State.View.iter     (View.flipHorizontal false)
+                model.Knight |> State.Position.iter (Position.addX (200f * fDeltaTime))
                 Right
             | Idle ->
                 setAnim "Idle";

@@ -8,15 +8,20 @@ module Position =
     let create pos =
         { Position = pos }
 
-    let position (p:Position) = p.Position
-    let withPosition newPos pos =
-        { pos with Position = newPos }
+    let setPosition newPos pos =
+        pos.Position <- newPos
 
     let createXY x y =
         create (Vector2.create x y)
 
     let add vec2 pos =
-        { pos with Position = pos.Position + vec2 }
+        pos.Position <- pos.Position + vec2
+
+    let addX x pos =
+        pos.Position <- Vector2.addX x pos.Position
+
+    let addY y pos =
+        pos.Position <- Vector2.addY y pos.Position
 
 type Origin =
     | TopLeft
@@ -109,8 +114,8 @@ module View =
 
     let flipHorizontal b view =
         match b with
-        | true  -> { view with Effects = SpriteEffects.FlipHorizontally }
-        | false -> { view with Effects = SpriteEffects.None }
+        | true  -> view.Effects <- SpriteEffects.FlipHorizontally
+        | false -> view.Effects <- SpriteEffects.None
 
     let show (view:View) =
         printfn "%A" view

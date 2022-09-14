@@ -44,6 +44,10 @@ module Extensions =
             Vector2(0f, scaling)
         static member down (scaling:float32) =
             Vector2(0f, -scaling)
+        static member addX x (vec:Vector2) =
+            Vector2(vec.X+x,vec.Y)
+        static member addY y (vec:Vector2) =
+            Vector2(vec.X,vec.Y+y)
 
     type System.Collections.Generic.Dictionary<'a,'b> with
         static member add key value (dic:Dictionary<'a,'b>) =

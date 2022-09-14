@@ -8,19 +8,19 @@ type Entity =
     Entity of int
 
 type Position = {
-    Position: Vector2
+    mutable Position: Vector2
 }
 
 type View = {
-    Texture:   Texture2D
-    SrcRect:   Rectangle
-    IsVisible: bool
-    Tint:      Color
-    Rotation:  float32
-    Origin:    Vector2
-    Scale:     Vector2
-    Effects:   SpriteEffects
-    Layer:     float32
+    Texture: Texture2D
+    SrcRect: Rectangle
+    Origin:  Vector2
+    Layer:   float32
+    mutable IsVisible: bool
+    mutable Tint:      Color
+    mutable Rotation:  float32
+    mutable Scale:     Vector2
+    mutable Effects:   SpriteEffects
 }
 
 type Movement = {
