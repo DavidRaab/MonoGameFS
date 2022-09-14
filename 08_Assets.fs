@@ -8,13 +8,7 @@ open Microsoft.Xna.Framework.Graphics
 type Assets = {
     Font:    Fonts
     Texture: Textures
-    Knight:  Knight
-}
-and Knight = {
-    Attack: Sheet
-    Idle:   Sheet
-    Run:    Sheet
-    Crouch: Sheet
+    Knight:  SheetAnimations
 }
 and Textures = {
     Missing:  Texture2D
@@ -37,10 +31,10 @@ module Assets =
             WhiteBox = texture 10 10 (Array.replicate 100 Color.White)
             Pixel    = texture 1  1 [|Color.White|]
         }
-        Knight = {
-            Attack = Sheet.fromColumnsRows (load "FreeKnight/Attack") 4 1
-            Idle   = Sheet.fromColumnsRows (load "FreeKnight/Idle")  10 1
-            Run    = Sheet.fromColumnsRows (load "FreeKnight/Run")   10 1
-            Crouch = Sheet.fromTexture     (load "FreeKnight/Crouch")
-        }
+        Knight = SheetAnimations.create "Idle" [
+            "Idle",   SheetAnimation.create 100 true (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Idle"))
+            "Attack", SheetAnimation.create  50 true (Sheet.fromColumnsRows  4 1 (load "FreeKnight/Attack"))
+            "Run",    SheetAnimation.create 100 true (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Run"))
+            "Crouch", SheetAnimation.create   0 true (Sheet.fromTexture          (load "FreeKnight/Crouch"))
+        ]
     }

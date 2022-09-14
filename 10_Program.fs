@@ -29,7 +29,7 @@ let initModel assets =
         e.addPosition (Position.createXY 100f 100f)
         e.addView     (
             View.fromTexture assets.Texture.Arrow FG1
-            |> View.setOrigin Center
+            |> View.withOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 0.5) () (fun _ dt ->
             State.View.change e (function
@@ -43,18 +43,11 @@ let initModel assets =
     let knight = Entity.init (fun e ->
         e.addPosition    (Position.createXY 200f 240f)
         e.addView        (
-            View.fromSheet assets.Knight.Idle FG1 0
+            SheetAnimations.toView FG1 assets.Knight
             |> View.setScale (Vector2.create 3f 3f)
-            |> View.setOrigin Top
+            |> View.withOrigin Top
         )
-        e.addSheetAnimations (
-            SheetAnimations.create "Idle" [
-                "Idle",   SheetAnimation.create 100 true assets.Knight.Idle
-                "Attack", SheetAnimation.create  50 true assets.Knight.Attack
-                "Run",    SheetAnimation.create 100 true assets.Knight.Run
-                "Crouch", SheetAnimation.create   0 true assets.Knight.Crouch
-            ]
-        )
+        e.addSheetAnimations (assets.Knight)
     )
 
     let boxes = ResizeArray<_>()
@@ -112,7 +105,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     let nextKnightState previousState =
         let isAttack =
             if Keyboard.isPressed Keys.Space
-            then Attack (TimeSpan.Zero, TimeSpan.FromSeconds 0.2)
+            then Attack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack"))
             else Idle
         let isLeft      = if Keyboard.isKeyDown Keys.Left  then Left   else Idle
         let isRight     = if Keyboard.isKeyDown Keys.Right then Right  else Idle

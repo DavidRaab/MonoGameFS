@@ -59,7 +59,7 @@ module SheetAnimations =
     let update (deltaTime: TimeSpan) =
         for entity in State.SheetAnimations.Entities do
             entity |> State.SheetAnimations.iter (fun anims ->
-                let anim = SheetAnimations.getAnimation anims
+                let anim = SheetAnimations.getCurrentAnimation anims
                 anim.ElapsedTime <- anim.ElapsedTime + deltaTime
                 if anim.ElapsedTime > anim.Duration then
                     anim.ElapsedTime <- anim.ElapsedTime - anim.Duration

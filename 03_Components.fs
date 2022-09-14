@@ -4,22 +4,43 @@ open MyGame.DataTypes
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
+(* Design Philosophy
+
+Functions that mutate a record must return `unit`. This way it is easy to distinguish functions
+that return a new record without mutating anything.
+
+An exception to this rule are function that begin with `set` usually to explicitly mutate
+a property. These functions must mutate the entry (to be consistent) and still return
+the original mutated record. This way Function piping can be used, and it is still obvious
+that an record gets mutated.
+
+So there are three cases of functions
+
+1. function:    record -> unit   // Mutates record
+2. function:    record -> record // Returns a new record without mutating any field
+3  setFunction: record -> record // Mutates the record and returns the record
+*)
+
 module Position =
     let create pos =
         { Position = pos }
 
     let setPosition newPos pos =
         pos.Position <- newPos
+        pos
 
     let createXY x y =
         create (Vector2.create x y)
 
+    /// Adds a vector to the Position
     let add vec2 pos =
         pos.Position <- pos.Position + vec2
 
+    /// Adds X value to the X Position
     let addX x pos =
         pos.Position <- Vector2.addX x pos.Position
 
+    /// Adds X value to the Y Position
     let addY y pos =
         pos.Position <- Vector2.addY y pos.Position
 
@@ -67,7 +88,7 @@ module View =
     }
 
     /// Generates a View from a Sheet by using the selected Sprite
-    let fromSheet sheet layer index = {
+    let fromSheet layer index sheet = {
         Texture   = sheet.Texture
         SrcRect   =
             Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
@@ -86,10 +107,12 @@ module View =
         Layer     = layerToFloat layer
     }
 
+    /// Mutates the `Scale` of the View and returns the `View` again
     let setScale scale (view:View) =
-        { view with Scale = scale }
+        view.Scale <- scale
+        view
 
-    let setOrigin name (view:View) =
+    let withOrigin name (view:View) =
         let width  = float32 view.SrcRect.Width
         let height = float32 view.SrcRect.Height
         let origin =
@@ -108,10 +131,6 @@ module View =
             Vector2(x,y)
         { view with Origin = origin }
 
-    let setOriginWith name f (view:View) =
-        let view = setOrigin name view
-        { view with Origin = f view.Origin }
-
     let flipHorizontal b view =
         match b with
         | true  -> view.Effects <- SpriteEffects.FlipHorizontally
@@ -122,7 +141,7 @@ module View =
         view
 
 module Sheet =
-    let fromWidthHeight (texture:Texture2D) width height =
+    let fromWidthHeight width height (texture:Texture2D) =
         let columns = texture.Width  / width
         let rows    = texture.Height / height
         let sprites = [|
@@ -132,7 +151,7 @@ module Sheet =
         |]
         {Texture = texture; Sprites = sprites }
 
-    let fromColumnsRows (texture:Texture2D) columns rows =
+    let fromColumnsRows columns rows (texture:Texture2D) =
         let width  = texture.Width  / columns
         let height = texture.Height / rows
         let sprites = [|
@@ -142,7 +161,7 @@ module Sheet =
         |]
         {Texture = texture; Sprites = sprites }
 
-    let fromSheet sheet idxs =
+    let fromSheet idxs sheet =
         let max = sheet.Sprites.Length
         { sheet with
             Sprites = [|
@@ -169,6 +188,12 @@ module SheetAnimation =
         Duration      = TimeSpan.FromMilliseconds duration
     }
 
+    let sheet anim =
+        anim.Sheet
+
+    let fullDuration anim =
+        anim.Duration * float anim.Sheet.Sprites.Length
+
     let reset anim =
         anim.CurrentSprite <- 0
         anim.ElapsedTime   <- TimeSpan.Zero
@@ -177,11 +202,9 @@ module SheetAnimation =
         anim.Sheet.Sprites.[anim.CurrentSprite]
 
     let nextSprite anim =
-        let maxSprite = anim.Sheet.Sprites.Length - 1
-        if anim.CurrentSprite < maxSprite then
-            anim.CurrentSprite <- anim.CurrentSprite + 1
-        else
-            if anim.IsLoop then anim.CurrentSprite <- 0
+        let maxSprite = anim.Sheet.Sprites.Length
+        if anim.IsLoop then
+            anim.CurrentSprite <- (anim.CurrentSprite + 1) % maxSprite
 
     let changeView (anim:SheetAnimation) (view:View) =
         { view with
@@ -189,30 +212,45 @@ module SheetAnimation =
             SrcRect = getSourceRect anim }
 
 module SheetAnimations =
-    let create active animations = {
-        Animations  = Map animations
-        Active      = active
-    }
+    let create active animations =
+        let animations = Map animations
+        let validAnims = Map.keys animations
+        if Seq.contains active validAnims then {
+            Animations = animations
+            Active     = active
+        }
+        else
+            failwithf "Cannot set active Animation to \"%s\" valid animations are %A" active validAnims
 
     let hasAnimation str anims =
         Seq.contains str anims.Animations.Keys
 
-    let getAnimation anims =
-        anims.Animations[anims.Active]
-
-    let getValidAnimations anims = [
+    let getAnimationsNames anims = [
         for animationName in anims.Animations.Keys do
             yield animationName
     ]
+
+    let getAnimationExn name anims =
+        match Map.tryFind name anims.Animations with
+        | Some anim -> anim
+        | None      -> failwithf "Cannot find animation \"%s\" available animations %A" name (getAnimationsNames anims)
+
+    let getCurrentAnimation anims =
+        getAnimationExn anims.Active anims
 
     let setAnimation active anims =
         if hasAnimation active anims then
             if anims.Active <> active then
                 anims.Active <- active
-                SheetAnimation.reset (getAnimation anims)
+                SheetAnimation.reset (getCurrentAnimation anims)
         else
             eprintfn "No Animation \"%s\" available Animations %A at\n%s"
-                active (getValidAnimations anims) (stackTrace 1)
+                active (getAnimationsNames anims) (stackTrace 1)
+
+    let toView layer anims =
+        let anim = getCurrentAnimation anims
+        SheetAnimation.sheet anim
+        |> View.fromSheet layer (anim.CurrentSprite)
 
 module Movement =
     let create dir =

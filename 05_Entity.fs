@@ -1,6 +1,7 @@
 namespace MyGame.Entity
 open MyGame
 open MyGame.DataTypes
+open MyGame.Components
 open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
@@ -84,3 +85,12 @@ module EntityExtension =
         member this.deleteMovement ()        = State.Movement.delete this
         member this.addSheetAnimations anim  = State.SheetAnimations.add anim this
         member this.deleteSheetAnimations () = State.SheetAnimations.delete this
+        member this.setAnimation name =
+            this |> State.SheetAnimations.iter (fun anims ->
+                SheetAnimations.setAnimation name anims
+            )
+        member this.getAnimationExn name =
+            match State.SheetAnimations.get this with
+            | ValueSome anims -> SheetAnimations.getAnimationExn name anims
+            | ValueNone       -> failwithf "%A has no SheetAnimations" this
+
