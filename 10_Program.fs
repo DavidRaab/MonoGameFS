@@ -10,7 +10,8 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 // Only load the Keys -- I have my own Input Implementation on top of MonoGame
-type Keys = Input.Keys
+type Key    = Input.Keys
+type Button = Input.Buttons
 
 // Model
 type Model = {
@@ -78,21 +79,27 @@ let initModel assets =
     gameState
 
 type KnightState =
-    | Attack of elapsed:TimeSpan * duration:TimeSpan
-    | Left
-    | Right
-    | Crouch
-    | Idle
+    | IsAttack of elapsed:TimeSpan * duration:TimeSpan
+    | IsLeft
+    | IsRight
+    | IsCrouch
+    | IsIdle
 
 let statePriority state =
     match state with
-    | Attack _ -> 4
-    | Left     -> 3
-    | Right    -> 3
-    | Crouch   -> 2
-    | Idle     -> 1
+    | IsAttack _ -> 4
+    | IsLeft     -> 3
+    | IsRight    -> 3
+    | IsCrouch   -> 2
+    | IsIdle     -> 1
 
-let mutable knightState = Idle
+type Action =
+    | Attack
+    | MoveLeft
+    | MoveRight
+    | Crouch
+
+let mutable knightState = IsIdle
 
 // A Fixed Update implementation that tuns at the specified fixedUpdateTiming
 let fixedUpdateTiming = TimeSpan.FromSeconds (1.0 / 60.0)
@@ -103,13 +110,28 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     Systems.SheetAnimations.update deltaTime
 
     let nextKnightState previousState =
-        let isAttack =
-            if Keyboard.isPressed Keys.Space
-            then Attack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack"))
-            else Idle
-        let isLeft      = if Keyboard.isKeyDown Keys.Left  then Left   else Idle
-        let isRight     = if Keyboard.isKeyDown Keys.Right then Right  else Idle
-        let isCrouch    = if Keyboard.isKeyDown Keys.Down  then Crouch else Idle
+        let actions = Input.mapInput {
+            Keyboard = [
+                IsPressed (Key.Space, Attack)
+                IsKeyDown (Key.Left,  MoveLeft)
+                IsKeyDown (Key.Right, MoveRight)
+                IsKeyDown (Key.Down,  Crouch)
+            ]
+            GamePad = [
+                IsKeyDown (Button.X,         Attack)
+                IsKeyDown (Button.DPadLeft,  MoveLeft)
+                IsKeyDown (Button.DPadRight, MoveRight)
+                IsKeyDown (Button.DPadDown,  Crouch)
+            ]
+        }
+
+        let action2state action state =
+            if List.contains action actions then state else IsIdle
+
+        let isAttack    = action2state Attack   (IsAttack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack")))
+        let isLeft      = action2state MoveLeft  IsLeft
+        let isRight     = action2state MoveRight IsRight
+        let isCrouch    = action2state Crouch    IsCrouch
         let wantedState = List.maxBy statePriority [isAttack;isLeft;isRight;isCrouch]
 
         let setAnim name =
@@ -119,30 +141,30 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
         let setState state =
             match state with
-            | Attack (e,d) ->
-                setAnim "Attack"; Attack (e,d)
-            | Crouch       ->
-                setAnim "Crouch"; Crouch
-            | Left         ->
+            | IsAttack (e,d) ->
+                setAnim "Attack"; IsAttack (e,d)
+            | IsCrouch ->
+                setAnim "Crouch"; IsCrouch
+            | IsLeft         ->
                 setAnim "Run";
                 model.Knight |> State.View.iter     (View.flipHorizontal true)
                 model.Knight |> State.Position.iter (Position.addX (-200f * fDeltaTime))
-                Left
-            | Right        ->
+                IsLeft
+            | IsRight        ->
                 setAnim "Run";
                 model.Knight |> State.View.iter     (View.flipHorizontal false)
                 model.Knight |> State.Position.iter (Position.addX (200f * fDeltaTime))
-                Right
-            | Idle ->
+                IsRight
+            | IsIdle ->
                 setAnim "Idle";
-                Idle
+                IsIdle
 
         match previousState, wantedState with
-        | Attack (e,d), wantedState ->
+        | IsAttack (e,d), wantedState ->
             let elapsed = e + deltaTime
             if elapsed >= d
             then setState wantedState
-            else Attack (elapsed,d)
+            else IsAttack (elapsed,d)
         | _ , wanted  -> setState wanted
 
     knightState <- nextKnightState knightState
@@ -164,7 +186,7 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     Keyboard.addKeys (keyboard.GetPressedKeys())
 
     // Close Game
-    if keyboard.IsKeyDown Keys.Escape then
+    if keyboard.IsKeyDown Key.Escape then
         game.Exit ()
 
     let deltaTime = gameTime.ElapsedGameTime

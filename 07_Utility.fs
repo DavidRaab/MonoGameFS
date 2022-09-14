@@ -48,6 +48,43 @@ module Keyboard =
     let isKeyUp key =
         currentState.IsKeyUp key
 
+type ButtonState<'Button,'Action> =
+    | IsPressed  of 'Button * 'Action
+    | IsReleased of 'Button * 'Action
+    | IsKeyDown  of 'Button * 'Action
+    | IsKeyUp    of 'Button * 'Action
+
+type Input<'Action> = {
+    Keyboard: ButtonState<Keys,   'Action> list
+    GamePad:  ButtonState<Buttons,'Action> list
+}
+
+module Input =
+    let mapInput definition =
+        // TODO: Fix Me
+        let gs = GamePad.GetState(0)
+
+        let actions = ResizeArray<_>()
+
+        for action in definition.Keyboard do
+            match action with
+            | IsPressed  (button,action) ->
+                if Keyboard.isPressed  button then actions.Add action
+            | IsReleased (button,action) ->
+                if Keyboard.isReleased button then actions.Add action
+            | IsKeyDown  (button,action) ->
+                if Keyboard.isKeyDown  button then actions.Add action
+            | IsKeyUp    (button,action) ->
+                if Keyboard.isKeyUp    button then actions.Add action
+
+        for action in definition.GamePad do
+            match action with
+            | IsKeyDown (button,action) ->
+                if gs.IsButtonDown button then actions.Add action
+            | IsKeyUp   (button,action) ->
+                if gs.IsButtonUp   button then actions.Add action
+
+        List.ofSeq actions
 
 type FPS = {
     mutable Updates:     int
