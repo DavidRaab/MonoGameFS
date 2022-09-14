@@ -287,7 +287,6 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     )
     *)
 
-
 // Run MonoGame Application
 [<EntryPoint;System.STAThread>]
 let main argv =

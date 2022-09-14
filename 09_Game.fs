@@ -3,10 +3,6 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 
-module GamePad =
-    let isPressed state =
-        state = ButtonState.Pressed
-
 type MonoGame<'Assets,'GameState>(init, loadAssets, initModel, update, draw) as this =
     inherit Game()
     let graphics       = new GraphicsDeviceManager(this)
