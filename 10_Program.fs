@@ -16,6 +16,7 @@ type Button = Input.Buttons
 // Model
 type Model = {
     Knight: Entity
+    Camera: Vector3
 }
 
 // Initialize the Game Model
@@ -75,6 +76,7 @@ let initModel assets =
 
     let gameState = {
         Knight = knight
+        Camera = Vector3.Zero
     }
     gameState
 
@@ -169,10 +171,24 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
     knightState <- nextKnightState knightState
 
+    let updateCamera key (vec:Vector3) (camera:Vector3) =
+        if   Keyboard.isKeyDown key
+        then camera + (vec * fDeltaTime)
+        else camera
+
+    let camera =
+        model.Camera
+        |> updateCamera Key.W (Vector3(0f,100f,0f))
+        |> updateCamera Key.A (Vector3(100f,0f,0f))
+        |> updateCamera Key.S (Vector3(0f,-100f,0f))
+        |> updateCamera Key.D (Vector3(-100f,0f,0f))
+        |> updateCamera Key.R (Vector3(0f,0f,1f))
+        |> updateCamera Key.F (Vector3(0f,0f,-1f))
+
     // Resets the Keyboard State
     Keyboard.nextState ()
 
-    model
+    { model with Camera = camera }
 
 // Type Alias for my game
 type MyGame = MonoGame<Assets,Model>
@@ -224,7 +240,9 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
-    game.spriteBatch.Begin ()
+
+    let trans = Matrix.CreateTranslation(model.Camera)
+    game.spriteBatch.Begin (transformMatrix = trans)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
     game.spriteBatch.End ()
