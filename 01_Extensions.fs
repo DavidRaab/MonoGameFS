@@ -31,6 +31,9 @@ module Extensions =
     let rad2deg (radiant:float32<rad>) =
         radiant * 180.0f / float32 System.Math.PI * 1.0f<deg/rad>
 
+    let sec sec =
+        TimeSpan.FromSeconds sec
+
     module Texture2D =
         let create gd width height data =
             let tex = new Texture2D(gd, width, height)
@@ -38,7 +41,7 @@ module Extensions =
             tex
 
     module TimeSpan =
-        let oneSecond = TimeSpan.FromSeconds(1.0)
+        let oneSecond = sec 1.0
 
     type Vector2 with
         static member create (x:float32) (y:float32) =

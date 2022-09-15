@@ -32,7 +32,7 @@ let initModel assets =
             View.fromTexture assets.Texture.Arrow FG1
             |> View.withOrigin Center
         )
-        Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 0.5) () (fun _ dt ->
+        Systems.Timer.addTimer (Timer.every (sec 0.5) () (fun _ dt ->
             State.View.change e (function
                 | ValueNone      -> ValueNone
                 | ValueSome view -> ValueSome { view with Rotation = view.Rotation + deg2rad 45f<deg> }
@@ -61,14 +61,14 @@ let initModel assets =
             ))
 
 
-    Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 1.0) false (fun state dt ->
+    Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
         let vec = if state then Vector2.right 10f else Vector2.left 10f
         for box in boxes do
             State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
         State (not state)
     ))
 
-    Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 1.0) () (fun _ _ ->
+    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun _ _ ->
         System.GC.Collect ()
         State ()
     ))
@@ -102,7 +102,7 @@ type Action =
 let mutable knightState = IsIdle
 
 // A Fixed Update implementation that tuns at the specified fixedUpdateTiming
-let fixedUpdateTiming = TimeSpan.FromSeconds (1.0 / 60.0)
+let fixedUpdateTiming = sec (1.0 / 60.0)
 let fixedUpdate model (deltaTime:TimeSpan) =
     let fDeltaTime = float32 deltaTime.TotalSeconds
     Systems.Movement.update        deltaTime
@@ -249,7 +249,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
 let init (game:MyGame) =
     game.Graphics.SynchronizeWithVerticalRetrace <- false
     game.IsFixedTimeStep       <- false
-    game.TargetElapsedTime     <- TimeSpan.FromSeconds(1.0 / 60.0)
+    game.TargetElapsedTime     <- sec (1.0 / 60.0)
     game.Content.RootDirectory <- "Content"
     game.IsMouseVisible        <- true
     game.SetResolution 854 480
