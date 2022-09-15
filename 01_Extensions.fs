@@ -25,13 +25,13 @@ module Extensions =
     // Radiant and Degree types
     [<Measure>] type rad
     [<Measure>] type deg
-    let deg2rad (degree:float32<deg>) =
-        float degree * System.Math.PI / 180.0 * 1.0<rad/deg>
-        |> float32
+    let deg2rad (degree:float32<deg>) : float32<rad> =
+        let rad = float degree * System.Math.PI / 180.0 * 1.0 |> float32
+        LanguagePrimitives.Float32WithMeasure rad
 
-    let rad2deg (radiant:float32<rad>) =
-        float radiant * 180.0 / System.Math.PI * 1.0<deg/rad>
-        |> float32
+    let rad2deg (radiant:float32<rad>) : float32<deg> =
+        let deg = float radiant * 180.0 / System.Math.PI * 1.0 |> float32
+        LanguagePrimitives.Float32WithMeasure deg
 
     let sec sec =
         TimeSpan.FromSeconds sec
