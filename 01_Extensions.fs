@@ -26,10 +26,10 @@ module Extensions =
     [<Measure>] type rad
     [<Measure>] type deg
     let deg2rad (degree:float32<deg>) =
-        degree * float32 System.Math.PI / 180.0f * 1.0f<rad/deg>
+        degree * MathHelper.Pi / 180.0f * 1.0f<rad/deg>
 
     let rad2deg (radiant:float32<rad>) =
-        radiant * 180.0f / float32 System.Math.PI * 1.0f<deg/rad>
+        radiant * 180.0f / MathHelper.Pi * 1.0f<deg/rad>
 
     let sec sec =
         TimeSpan.FromSeconds sec
