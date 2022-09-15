@@ -15,8 +15,9 @@ type Button = Input.Buttons
 
 // Model
 type Model = {
-    Knight: Entity
-    Camera: Vector3
+    Knight:     Entity
+    Camera:     Vector3
+    CameraZoom: float32
 }
 
 // Initialize the Game Model
@@ -75,8 +76,9 @@ let initModel assets =
     ))
 
     let gameState = {
-        Knight = knight
-        Camera = Vector3.Zero
+        Knight     = knight
+        Camera     = Vector3.Zero
+        CameraZoom = 1f
     }
     gameState
 
@@ -182,13 +184,22 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         |> updateCamera Key.A (Vector3(100f,0f,0f))
         |> updateCamera Key.S (Vector3(0f,-100f,0f))
         |> updateCamera Key.D (Vector3(-100f,0f,0f))
-        |> updateCamera Key.R (Vector3(0f,0f,1f))
-        |> updateCamera Key.F (Vector3(0f,0f,-1f))
+
+    let updateIf bool truef value =
+        if bool then truef value else value
+
+    let zoom =
+        model.CameraZoom
+        |> updateIf (Keyboard.isKeyDown Key.R) (fun zoom -> zoom + (1f * fDeltaTime))
+        |> updateIf (Keyboard.isKeyDown Key.F) (fun zoom -> zoom - (1f * fDeltaTime))
 
     // Resets the Keyboard State
     Keyboard.nextState ()
 
-    { model with Camera = camera }
+    { model with
+        Camera     = camera
+        CameraZoom = zoom
+    }
 
 // Type Alias for my game
 type MyGame = MonoGame<Assets,Model>
@@ -241,7 +252,10 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
 
-    let trans = Matrix.CreateTranslation(model.Camera)
+    let trans =
+        Matrix.CreateTranslation(model.Camera)
+        * Matrix.CreateScale(model.CameraZoom, model.CameraZoom, 1f)
+
     game.spriteBatch.Begin (transformMatrix = trans)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
