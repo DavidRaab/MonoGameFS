@@ -35,7 +35,7 @@ let initModel assets =
         Systems.Timer.addTimer (Timer.every (TimeSpan.FromSeconds 0.5) () (fun _ dt ->
             State.View.change e (function
                 | ValueNone      -> ValueNone
-                | ValueSome view -> ValueSome { view with Rotation = view.Rotation + 0.1f }
+                | ValueSome view -> ValueSome { view with Rotation = view.Rotation + deg2rad 45f<deg> }
             )
             State ()
         ))

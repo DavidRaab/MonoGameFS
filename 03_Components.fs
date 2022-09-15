@@ -80,7 +80,7 @@ module View =
         SrcRect   = Rectangle(0,0,sprite.Width,sprite.Height)
         IsVisible = true
         Tint      = Color.White
-        Rotation  = 0f
+        Rotation  = 0f<rad>
         Origin    = Vector2.Zero
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
@@ -100,7 +100,7 @@ module View =
             )
         IsVisible = true
         Tint      = Color.White
-        Rotation  = 0f
+        Rotation  = 0f<rad>
         Origin    = Vector2.Zero
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
@@ -180,12 +180,12 @@ module Sheet =
     }
 
 module SheetAnimation =
-    let create (duration:int) isLoop sheet = {
+    let create (duration:int<ms>) isLoop sheet = {
         Sheet         = sheet
         CurrentSprite = 0
         IsLoop        = isLoop
         ElapsedTime   = TimeSpan.Zero
-        Duration      = TimeSpan.FromMilliseconds duration
+        Duration      = TimeSpan.FromMilliseconds (float (duration / 1<ms>))
     }
 
     let sheet anim =

@@ -8,6 +8,9 @@ type TimeSpan          = System.TimeSpan
 
 [<AutoOpen>]
 module Extensions =
+    // Milliseconds
+    [<Measure>] type ms
+
     let stackTrace (skip:int) =
         let skip = if skip < 0 then 1 else skip+1
         let st   = System.Diagnostics.StackTrace(skip, true)
@@ -19,6 +22,14 @@ module Extensions =
                     (frame.GetMethod().Name)
             )
         )
+    // Radiant and Degree types
+    [<Measure>] type rad
+    [<Measure>] type deg
+    let deg2rad (degree:float32<deg>) =
+        degree * float32 System.Math.PI / 180.0f * 1.0f<rad/deg>
+
+    let rad2deg (radiant:float32<rad>) =
+        radiant * 180.0f / float32 System.Math.PI * 1.0f<deg/rad>
 
     module Texture2D =
         let create gd width height data =

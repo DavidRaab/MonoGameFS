@@ -1,4 +1,5 @@
 namespace MyGame.DataTypes
+open MyGame.Extensions
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
@@ -18,7 +19,7 @@ type View = {
     Layer:   float32
     mutable IsVisible: bool
     mutable Tint:      Color
-    mutable Rotation:  float32
+    mutable Rotation:  float32<rad>
     mutable Scale:     Vector2
     mutable Effects:   SpriteEffects
 }
