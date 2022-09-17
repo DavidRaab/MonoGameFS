@@ -36,6 +36,9 @@ module Extensions =
     let sec sec =
         TimeSpan.FromSeconds sec
 
+    let clampf32 (min:float32) max value =
+        System.Math.Clamp(value, min, max)
+
     module Texture2D =
         let create gd width height data =
             let tex = new Texture2D(gd, width, height)

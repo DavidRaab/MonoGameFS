@@ -16,7 +16,7 @@ type Button = Input.Buttons
 // Model
 type Model = {
     Knight:     Entity
-    Camera:     Vector3
+    Camera:     Vector2
     CameraZoom: float32
 }
 
@@ -44,7 +44,7 @@ let initModel assets =
     )
 
     let knight = Entity.init (fun e ->
-        e.addPosition    (Position.createXY 200f 240f)
+        e.addPosition    (Position.createXY 427f 0f)
         e.addView        (
             SheetAnimations.toView FG1 assets.Knight
             |> View.setScale (Vector2.create 3f 3f)
@@ -77,7 +77,7 @@ let initModel assets =
 
     let gameState = {
         Knight     = knight
-        Camera     = Vector3.Zero
+        Camera     = Vector2.Zero
         CameraZoom = 1f
     }
     gameState
@@ -173,25 +173,35 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
     knightState <- nextKnightState knightState
 
-    let updateCamera key (vec:Vector3) (camera:Vector3) =
-        if   Keyboard.isKeyDown key
-        then camera + (vec * fDeltaTime)
-        else camera
 
     let camera =
-        model.Camera
-        |> updateCamera Key.W (Vector3(0f,100f,0f))
-        |> updateCamera Key.A (Vector3(100f,0f,0f))
-        |> updateCamera Key.S (Vector3(0f,-100f,0f))
-        |> updateCamera Key.D (Vector3(-100f,0f,0f))
+        let updateCamera key (vec:Vector2) (camera:Vector2) =
+            if   Keyboard.isKeyDown key
+            then camera + (vec * (3f - model.CameraZoom) * fDeltaTime)
+            else camera
 
-    let updateIf bool truef value =
-        if bool then truef value else value
+        let px = 400f
+        let camera =
+            if Keyboard.isKeyDown Key.Home
+            then Vector2(0f,0f)
+            else model.Camera
+
+        camera
+        |> updateCamera Key.W (Vector2(0f,-px))
+        |> updateCamera Key.A (Vector2(-px,0f))
+        |> updateCamera Key.S (Vector2(0f,px))
+        |> updateCamera Key.D (Vector2(px,0f))
+
 
     let zoom =
+        let updateIf bool truef value =
+            if bool then truef value else value
+
         model.CameraZoom
         |> updateIf (Keyboard.isKeyDown Key.R) (fun zoom -> zoom + (1f * fDeltaTime))
         |> updateIf (Keyboard.isKeyDown Key.F) (fun zoom -> zoom - (1f * fDeltaTime))
+        |> clampf32 0.03f 2f
+
 
     // Resets the Keyboard State
     Keyboard.nextState ()
@@ -252,11 +262,16 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
 
-    let trans =
-        Matrix.CreateTranslation(model.Camera)
-        * Matrix.CreateScale(model.CameraZoom, model.CameraZoom, 1f)
+    let view =
+        let width  = float32 game.GraphicsDevice.Viewport.Width
+        let height = float32 game.GraphicsDevice.Viewport.Height
 
-    game.spriteBatch.Begin (transformMatrix = trans)
+        Matrix.CreateTranslation(Vector3(-model.Camera, 0f))
+        * Matrix.CreateTranslation(-Vector3(width/2f, height/2f, 0f))
+        * Matrix.CreateScale(model.CameraZoom, model.CameraZoom, 1f)
+        * Matrix.CreateTranslation(width/2f, height/2f, 0f)
+
+    game.spriteBatch.Begin (transformMatrix = view)
     FPS.draw game.Asset.Font.Default game.spriteBatch
     Systems.View.draw game.spriteBatch
     game.spriteBatch.End ()
