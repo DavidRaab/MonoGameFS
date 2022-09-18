@@ -21,6 +21,37 @@ So there are three cases of functions
 3  setFunction: record -> record // Mutates the record and returns the record
 *)
 
+module Radiant =
+    let wrap (x:float) =
+        LanguagePrimitives.FloatWithMeasure<rad> x
+
+    let f32 (rad:float<rad>) =
+        float32 rad
+
+    let fromDeg (degree:float<deg>) =
+        float degree * System.Math.PI / 180.0
+        |> LanguagePrimitives.FloatWithMeasure<rad>
+
+    let toDeg (radiant:float<rad>) =
+        float radiant * 180.0 / System.Math.PI
+        |> LanguagePrimitives.FloatWithMeasure<deg>
+
+module Origin =
+    let toVector2 width height origin =
+        let x,y =
+            match origin with
+            | TopLeft        ->         0f,          0f
+            | Top            -> width / 2f,          0f
+            | TopRight       -> width     ,          0f
+            | Left           ->         0f, height / 2f
+            | Center         -> width / 2f, height / 2f
+            | Right          -> width     , height / 2f
+            | BottomLeft     ->         0f, height
+            | Bottom         -> width / 2f, height
+            | BottomRight    -> width     , height
+            | Position (x,y) -> x,y
+        Vector2(x,y)
+
 module Position =
     let create pos =
         { Position = pos }
@@ -44,26 +75,6 @@ module Position =
     let addY y pos =
         pos.Position <- Vector2.addY y pos.Position
 
-type Origin =
-    | TopLeft
-    | Top
-    | TopRight
-    | Left
-    | Center
-    | Right
-    | BottomLeft
-    | Bottom
-    | BottomRight
-    | Position of float32 * float32
-
-type ViewLayer =
-    | BG2
-    | BG1
-    | FG2
-    | FG1
-    | UI2
-    | UI1
-
 module View =
     let layerToFloat layer =
         match layer with
@@ -80,7 +91,7 @@ module View =
         SrcRect   = Rectangle(0,0,sprite.Width,sprite.Height)
         IsVisible = true
         Tint      = Color.White
-        Rotation  = 0f<rad>
+        Rotation  = 0.0<rad>
         Origin    = Vector2.Zero
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
@@ -100,7 +111,7 @@ module View =
             )
         IsVisible = true
         Tint      = Color.White
-        Rotation  = 0f<rad>
+        Rotation  = 0.0<rad>
         Origin    = Vector2.Zero
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
@@ -110,6 +121,10 @@ module View =
     /// Mutates the `Scale` of the View and returns the `View` again
     let setScale scale (view:View) =
         view.Scale <- scale
+        view
+
+    let setRotation rot (view:View) =
+        view.Rotation <- rot
         view
 
     let withOrigin name (view:View) =
@@ -263,3 +278,33 @@ module Movement =
 
     let createXY x y =
         create (Vector2(x,y))
+
+module Camera =
+    let create width height = {
+        Camera.CameraPosition = Vector2.create 0f 0f
+        Zoom                  = 1.0
+        Width                 = width
+        Height                = height
+        Origin                = Center
+        MinZoom               = 0.03
+        MaxZoom               = 2.0
+    }
+
+    let setPosition vec camera =
+        camera.CameraPosition <- vec
+        camera
+
+    let setZoom zoom camera =
+        camera.Zoom <- System.Math.Clamp(zoom, camera.MinZoom, camera.MaxZoom)
+        camera
+
+    let add vec camera =
+        camera.CameraPosition <- camera.CameraPosition + vec
+
+    let matrix camera =
+        let origin = Origin.toVector2 (float32 camera.Width) (float32 camera.Height) camera.Origin
+
+        Matrix.CreateTranslation  (Vector3(-camera.CameraPosition , 0f))
+        * Matrix.CreateTranslation(Vector3(-origin, 0f))
+        * Matrix.CreateScale      (float32 camera.Zoom, float32 camera.Zoom, 1f)
+        * Matrix.CreateTranslation(Vector3(origin, 0f))

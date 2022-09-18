@@ -15,9 +15,7 @@ type Button = Input.Buttons
 
 // Model
 type Model = {
-    Knight:     Entity
-    Camera:     Vector2
-    CameraZoom: float32
+    Knight: Entity
 }
 
 // Initialize the Game Model
@@ -35,17 +33,16 @@ let initModel assets =
             |> View.withOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (sec 0.5) () (fun _ dt ->
-            State.View.change e (function
-                | ValueNone      -> ValueNone
-                | ValueSome view -> ValueSome { view with Rotation = view.Rotation + deg2rad 45f<deg> }
+            e |> State.View.iter (fun view ->
+                View.setRotation (view.Rotation + Radiant.fromDeg 45.0<deg>) view |> ignore
             )
             State ()
         ))
     )
 
     let knight = Entity.init (fun e ->
-        e.addPosition    (Position.createXY 427f 0f)
-        e.addView        (
+        e.addPosition (Position.createXY 427f 0f)
+        e.addView     (
             SheetAnimations.toView FG1 assets.Knight
             |> View.setScale (Vector2.create 3f 3f)
             |> View.withOrigin Top
@@ -62,7 +59,6 @@ let initModel assets =
                 box.addView     (View.fromTexture assets.Texture.WhiteBox BG1)
             ))
 
-
     Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
         let vec = if state then Vector2.right 10f else Vector2.left 10f
         for box in boxes do
@@ -76,9 +72,7 @@ let initModel assets =
     ))
 
     let gameState = {
-        Knight     = knight
-        Camera     = Vector2.Zero
-        CameraZoom = 1f
+        Knight = knight
     }
     gameState
 
@@ -174,42 +168,30 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     knightState <- nextKnightState knightState
 
 
-    let camera =
-        let updateCamera key (vec:Vector2) (camera:Vector2) =
-            if   Keyboard.isKeyDown key
-            then camera + (vec * (3f - model.CameraZoom) * fDeltaTime)
-            else camera
+    // Update Camera Position
+    let updateCamera key (vec:Vector2) =
+        if Keyboard.isKeyDown key then
+            Camera.add (vec * (3.0f - float32 State.camera.Zoom) * fDeltaTime) State.camera
 
-        let px = 400f
-        let camera =
-            if Keyboard.isKeyDown Key.Home
-            then Vector2(0f,0f)
-            else model.Camera
+    let SpeedPx = 400f
+    if Keyboard.isKeyDown Key.Home then
+        Camera.setPosition (Vector2.create 0f 0f) State.camera |> ignore
 
-        camera
-        |> updateCamera Key.W (Vector2(0f,-px))
-        |> updateCamera Key.A (Vector2(-px,0f))
-        |> updateCamera Key.S (Vector2(0f,px))
-        |> updateCamera Key.D (Vector2(px,0f))
+    updateCamera Key.W (Vector2(0f,-SpeedPx))
+    updateCamera Key.A (Vector2(-SpeedPx,0f))
+    updateCamera Key.S (Vector2(0f,SpeedPx))
+    updateCamera Key.D (Vector2(SpeedPx,0f))
 
 
-    let zoom =
-        let updateIf bool truef value =
-            if bool then truef value else value
-
-        model.CameraZoom
-        |> updateIf (Keyboard.isKeyDown Key.R) (fun zoom -> zoom + (1f * fDeltaTime))
-        |> updateIf (Keyboard.isKeyDown Key.F) (fun zoom -> zoom - (1f * fDeltaTime))
-        |> clampf32 0.03f 2f
-
+    // Update Camera Zoom
+    if Keyboard.isKeyDown Key.R then
+        Camera.setZoom (State.camera.Zoom + (1.0 * deltaTime.TotalSeconds)) State.camera |> ignore
+    if Keyboard.isKeyDown Key.F then
+        Camera.setZoom (State.camera.Zoom - (1.0 * deltaTime.TotalSeconds)) State.camera |> ignore
 
     // Resets the Keyboard State
     Keyboard.nextState ()
-
-    { model with
-        Camera     = camera
-        CameraZoom = zoom
-    }
+    model
 
 // Type Alias for my game
 type MyGame = MonoGame<Assets,Model>
@@ -258,49 +240,34 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
     model
 
-
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
 
-    let view =
-        let width  = float32 game.GraphicsDevice.Viewport.Width
-        let height = float32 game.GraphicsDevice.Viewport.Height
+    let doSpriteBatch (sb:SpriteBatch) (camera:Camera) f =
+        sb.Begin(transformMatrix = Camera.matrix camera)
+        f sb
+        sb.End()
+    let onCamera = doSpriteBatch game.spriteBatch
 
-        Matrix.CreateTranslation(Vector3(-model.Camera, 0f))
-        * Matrix.CreateTranslation(-Vector3(width/2f, height/2f, 0f))
-        * Matrix.CreateScale(model.CameraZoom, model.CameraZoom, 1f)
-        * Matrix.CreateTranslation(width/2f, height/2f, 0f)
-
-    game.spriteBatch.Begin (transformMatrix = view)
-    FPS.draw game.Asset.Font.Default game.spriteBatch
-    Systems.View.draw game.spriteBatch
-    game.spriteBatch.End ()
-
-    (* // Full Example for all parameters
-    game.spriteBatch.DrawString(
-        spriteFont = game.Asset.Font.Default,
-        text       = "Hello, World!",
-        position   = Vector2(100f, 100f),
-        color      = Color.White,
-        rotation   = 0f,
-        origin     = Vector2.Zero,
-        scale      = Vector2.One,
-        effects    = SpriteEffects.None,
-        layerDepth = 0f
+    onCamera State.cameraScreen (fun sb ->
+        FPS.draw game.Asset.Font.Default sb
     )
-    *)
 
-
+    onCamera State.camera (fun sb ->
+        Systems.View.draw sb
+    )
 
 // Initialization of the Game
 let init (game:MyGame) =
+    let width, height = 854, 480
     game.Graphics.SynchronizeWithVerticalRetrace <- false
     game.IsFixedTimeStep       <- false
     game.TargetElapsedTime     <- sec (1.0 / 60.0)
     game.Content.RootDirectory <- "Content"
     game.IsMouseVisible        <- true
-    game.SetResolution 854 480
-
+    game.SetResolution width height
+    State.camera       <- Camera.create width height
+    State.cameraScreen <- Camera.create width height
 
 // Loading Assets
 let loadAssets (game:MyGame) =

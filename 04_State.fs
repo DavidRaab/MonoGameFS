@@ -50,8 +50,9 @@ type State<'Component>() =
             onEntitiesChanged.Trigger ()
 
 module State =
-    let Position        = State<Position>()
-    let View            = State<View>()
-    let Movement        = State<Movement>()
-    let SheetAnimations = State<SheetAnimations>()
-
+    let mutable camera       = Unchecked.defaultof<Camera>
+    let mutable cameraScreen = Unchecked.defaultof<Camera>
+    let Position             = State<Position>()
+    let View                 = State<View>()
+    let Movement             = State<Movement>()
+    let SheetAnimations      = State<SheetAnimations>()

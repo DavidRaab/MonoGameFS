@@ -1,5 +1,6 @@
 namespace MyGame.Systems
 open MyGame
+open MyGame.Extensions
 open MyGame.DataTypes
 open MyGame.Components
 open MyGame.State
@@ -28,7 +29,7 @@ module View =
                     scale           = view.Scale,
                     sourceRectangle = view.SrcRect,
                     color           = view.Tint,
-                    rotation        = view.Rotation / 1.0f<rad>,
+                    rotation        = view.Rotation,
                     origin          = view.Origin,
                     effects         = view.Effects,
                     layerDepth      = view.Layer

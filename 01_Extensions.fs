@@ -10,6 +10,9 @@ type TimeSpan          = System.TimeSpan
 module Extensions =
     // Milliseconds
     [<Measure>] type ms
+    // Radiant and Degree types
+    [<Measure>] type rad
+    [<Measure>] type deg
 
     let stackTrace (skip:int) =
         let skip = if skip < 0 then 1 else skip+1
@@ -22,16 +25,6 @@ module Extensions =
                     (frame.GetMethod().Name)
             )
         )
-    // Radiant and Degree types
-    [<Measure>] type rad
-    [<Measure>] type deg
-    let deg2rad (degree:float32<deg>) : float32<rad> =
-        let rad = float degree * System.Math.PI / 180.0 * 1.0 |> float32
-        LanguagePrimitives.Float32WithMeasure rad
-
-    let rad2deg (radiant:float32<rad>) : float32<deg> =
-        let deg = float radiant * 180.0 / System.Math.PI * 1.0 |> float32
-        LanguagePrimitives.Float32WithMeasure deg
 
     let sec sec =
         TimeSpan.FromSeconds sec
@@ -44,6 +37,25 @@ module Extensions =
             let tex = new Texture2D(gd, width, height)
             tex.SetData data
             tex
+
+    type Graphics.SpriteBatch with
+        member this.Draw(
+            texture         : Texture2D,  position : Vector2, scale   : Vector2,
+            sourceRectangle : Rectangle,  color    : Color,
+            rotation        : float<rad>, origin   : Vector2, effects : SpriteEffects,
+            layerDepth      : float32
+        ) =
+            this.Draw(
+                texture         = texture,
+                position        = position,
+                scale           = scale,
+                sourceRectangle = sourceRectangle,
+                color           = color,
+                rotation        = float32 rotation,
+                origin          = origin,
+                effects         = effects,
+                layerDepth      = layerDepth
+            )
 
     module TimeSpan =
         let oneSecond = sec 1.0
