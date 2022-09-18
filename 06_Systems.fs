@@ -71,3 +71,39 @@ module SheetAnimations =
                 //   Could be mutable or setting a new animation must be revisited.
                 State.View.map (SheetAnimation.changeView anim) entity
             )
+
+module Debug =
+    let mousePosition (sb:SpriteBatch) (font:SpriteFont)  =
+        let state = Input.Mouse.GetState()
+        let world = Camera.screenToWorld (Vector2.create (float32 state.X) (float32 state.Y)) State.camera
+        sb.DrawString(
+            spriteFont = font,
+            text       = System.String.Format("Mouse Screen({0},{1}) World({2:0.00},{3:0.00})", state.X, state.Y, world.X, world.Y),
+            position   = Vector2(3f, 460f),
+            color      = Color.Black,
+            rotation   = 0f,
+            origin     = Vector2.Zero,
+            scale      = 1f,
+            effects    = SpriteEffects.None,
+            layerDepth = 0f
+        )
+
+    let trackPosition (sb:SpriteBatch) (font:SpriteFont) (entity:Entity) (whereToDraw:Vector2) =
+        entity |> State.Position.iter (fun pos ->
+            let screen = Camera.worldToScreen pos.Position State.camera
+            sb.DrawString(
+                spriteFont = font,
+                text       =
+                    System.String.Format("World({0:0.00},{1:0.00}) Screen({2:0},{3:0})",
+                        pos.Position.X, pos.Position.Y,
+                        screen.X, screen.Y
+                    ),
+                position   = whereToDraw,
+                color      = Color.Black,
+                rotation   = 0f,
+                origin     = Vector2.Zero,
+                scale      = 1f,
+                effects    = SpriteEffects.None,
+                layerDepth = 0f
+            )
+        )

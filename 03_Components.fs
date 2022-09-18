@@ -296,8 +296,13 @@ module Camera =
 
     let matrix camera =
         let origin = Origin.toVector (float32 camera.Width) (float32 camera.Height) camera.Origin
-
         Matrix.CreateTranslation  (Vector3(-camera.CameraPosition , 0f))
         * Matrix.CreateTranslation(Vector3(-origin, 0f))
         * Matrix.CreateScale      (float32 camera.Zoom, float32 camera.Zoom, 1f)
         * Matrix.CreateTranslation(Vector3(origin, 0f))
+
+    let screenToWorld position camera =
+        Vector2.Transform(position, Matrix.Invert (matrix camera))
+
+    let worldToScreen position camera =
+        Vector2.Transform(position, matrix camera)

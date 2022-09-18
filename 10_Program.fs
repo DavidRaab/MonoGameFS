@@ -20,6 +20,11 @@ type Model = {
 
 // Initialize the Game Model
 let initModel assets =
+    let box = Entity.init (fun e ->
+        e.addPosition (Position.createXY 0f 0f)
+        e.addView     (View.fromTexture assets.Texture.WhiteBox FG1)
+    )
+
     let arrow = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 100f)
         e.addView     (
@@ -243,12 +248,14 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
         sb.End()
     let onCamera = doSpriteBatch game.spriteBatch
 
-    onCamera State.cameraScreen (fun sb ->
-        FPS.draw game.Asset.Font.Default sb
-    )
-
     onCamera State.camera (fun sb ->
         Systems.View.draw sb
+    )
+
+    onCamera State.cameraScreen (fun sb ->
+        FPS.draw game.Asset.Font.Default sb
+        Systems.Debug.mousePosition sb game.Asset.Font.Default
+        Systems.Debug.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
     )
 
 // Initialization of the Game
