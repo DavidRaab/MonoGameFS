@@ -20,12 +20,6 @@ type Model = {
 
 // Initialize the Game Model
 let initModel assets =
-    // ECS System
-    let box = Entity.init (fun e ->
-        e.addPosition (Position.createXY 50f 50f)
-        e.addView     (View.fromTexture assets.Texture.WhiteBox FG2)
-    )
-
     let arrow = Entity.init (fun e ->
         e.addPosition (Position.createXY 100f 100f)
         e.addView     (
@@ -185,9 +179,9 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
     // Update Camera Zoom
     if Keyboard.isKeyDown Key.R then
-        Camera.setZoom (State.camera.Zoom + (1.0 * deltaTime.TotalSeconds)) State.camera |> ignore
+        Camera.addZoom (1.0 * deltaTime.TotalSeconds) State.camera
     if Keyboard.isKeyDown Key.F then
-        Camera.setZoom (State.camera.Zoom - (1.0 * deltaTime.TotalSeconds)) State.camera |> ignore
+        Camera.subtractZoom (1.0 * deltaTime.TotalSeconds) State.camera
 
     // Resets the Keyboard State
     Keyboard.nextState ()

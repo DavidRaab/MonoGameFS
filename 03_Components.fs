@@ -37,7 +37,7 @@ module Radiant =
         |> LanguagePrimitives.FloatWithMeasure<deg>
 
 module Origin =
-    let toVector2 width height origin =
+    let toVector width height origin =
         let x,y =
             match origin with
             | TopLeft        ->         0f,          0f
@@ -130,20 +130,7 @@ module View =
     let withOrigin name (view:View) =
         let width  = float32 view.SrcRect.Width
         let height = float32 view.SrcRect.Height
-        let origin =
-            let x,y =
-                match name with
-                | TopLeft        ->         0f,          0f
-                | Top            -> width / 2f,          0f
-                | TopRight       -> width     ,          0f
-                | Left           ->         0f, height / 2f
-                | Center         -> width / 2f, height / 2f
-                | Right          -> width     , height / 2f
-                | BottomLeft     ->         0f, height
-                | Bottom         -> width / 2f, height
-                | BottomRight    -> width     , height
-                | Position (x,y) -> x,y
-            Vector2(x,y)
+        let origin = Origin.toVector width height name
         { view with Origin = origin }
 
     let flipHorizontal b view =
@@ -298,11 +285,17 @@ module Camera =
         camera.Zoom <- System.Math.Clamp(zoom, camera.MinZoom, camera.MaxZoom)
         camera
 
+    let addZoom addition camera =
+        camera.Zoom <- System.Math.Clamp(camera.Zoom + addition, camera.MinZoom, camera.MaxZoom)
+
+    let subtractZoom subtraction camera =
+        camera.Zoom <- System.Math.Clamp(camera.Zoom - subtraction, camera.MinZoom, camera.MaxZoom)
+
     let add vec camera =
         camera.CameraPosition <- camera.CameraPosition + vec
 
     let matrix camera =
-        let origin = Origin.toVector2 (float32 camera.Width) (float32 camera.Height) camera.Origin
+        let origin = Origin.toVector (float32 camera.Width) (float32 camera.Height) camera.Origin
 
         Matrix.CreateTranslation  (Vector3(-camera.CameraPosition , 0f))
         * Matrix.CreateTranslation(Vector3(-origin, 0f))
