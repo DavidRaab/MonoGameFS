@@ -282,14 +282,14 @@ module Camera =
         camera
 
     let setZoom zoom camera =
-        camera.Zoom <- System.Math.Clamp(zoom, camera.MinZoom, camera.MaxZoom)
+        camera.Zoom <-clamp zoom camera.MinZoom camera.MaxZoom
         camera
 
     let addZoom addition camera =
-        camera.Zoom <- System.Math.Clamp(camera.Zoom + addition, camera.MinZoom, camera.MaxZoom)
+        camera.Zoom <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom + addition)
 
     let subtractZoom subtraction camera =
-        camera.Zoom <- System.Math.Clamp(camera.Zoom - subtraction, camera.MinZoom, camera.MaxZoom)
+        camera.Zoom <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom - subtraction)
 
     let add vec camera =
         camera.CameraPosition <- camera.CameraPosition + vec

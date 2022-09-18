@@ -29,6 +29,9 @@ module Extensions =
     let sec sec =
         TimeSpan.FromSeconds sec
 
+    let clamp (min:float) max value =
+        System.Math.Clamp(value, min, max)
+
     let clampf32 (min:float32) max value =
         System.Math.Clamp(value, min, max)
 
