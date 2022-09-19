@@ -21,20 +21,26 @@ So there are three cases of functions
 3  setFunction: record -> record // Mutates the record and returns the record
 *)
 
-module Radiant =
+module Radian =
     let wrap (x:float) =
         LanguagePrimitives.FloatWithMeasure<rad> x
 
     let f32 (rad:float<rad>) =
         float32 rad
 
+    /// A turn describes the angle of a circle between 0 and 1.
+    /// So 0.25 or 1/4 is a 1/4 circle or 90 degrees. 0.5 is a half-circle and so on.
+    let fromTurn x =
+        x * System.Math.Tau
+        * 1.0<rad>
+
     let fromDeg (degree:float<deg>) =
         float degree * System.Math.PI / 180.0
-        |> LanguagePrimitives.FloatWithMeasure<rad>
+        * 1.0<rad>
 
     let toDeg (radiant:float<rad>) =
         float radiant * 180.0 / System.Math.PI
-        |> LanguagePrimitives.FloatWithMeasure<deg>
+        * 1.0<rad>
 
 module Origin =
     let toVector width height origin =

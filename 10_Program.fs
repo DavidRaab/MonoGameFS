@@ -33,7 +33,7 @@ let initModel assets =
         )
         Systems.Timer.addTimer (Timer.every (sec 0.5) () (fun _ dt ->
             e |> State.View.iter (fun view ->
-                View.setRotation (view.Rotation + Radiant.fromDeg 45.0<deg>) view |> ignore
+                View.setRotation (view.Rotation + Radian.fromDeg 45.0<deg>) view |> ignore
             )
             State ()
         ))
