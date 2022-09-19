@@ -16,6 +16,7 @@ type Button = Input.Buttons
 // Model
 type Model = {
     Knight: Entity
+    Point:  Vector2
 }
 
 // Initialize the Game Model
@@ -72,6 +73,7 @@ let initModel assets =
 
     let gameState = {
         Knight = knight
+        Point  = Vector2(200f,0f)
     }
     gameState
 
@@ -166,7 +168,6 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
     knightState <- nextKnightState knightState
 
-
     // Update Camera Position
     let updateCamera key (vec:Vector2) =
         if Keyboard.isKeyDown key then
@@ -219,6 +220,12 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
         else
             model
 
+    let mouse = Input.Mouse.GetState()
+    let point =
+        if mouse.LeftButton = Input.ButtonState.Pressed
+        then Camera.screenToWorld (mouse.Position.ToVector2()) State.camera
+        else model.Point
+
     (*
     // Vibration through Triggers
     // printfn "%f %f" gamePad.Triggers.Left gamePad.Triggers.Right
@@ -237,7 +244,9 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
         game.Exit()
     *)
 
-    model
+    { model with
+        Point = point
+    }
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
@@ -248,8 +257,12 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
         sb.End()
     let onCamera = doSpriteBatch game.spriteBatch
 
+    let drawRect =
+        Systems.Debug.rectangle game.Asset.Texture.Pixel Color.MidnightBlue 2
+
     onCamera State.camera (fun sb ->
         Systems.View.draw sb
+        drawRect (Vector2.create 100f 100f) model.Point sb
     )
 
     onCamera State.cameraScreen (fun sb ->

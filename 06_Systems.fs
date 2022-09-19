@@ -107,3 +107,28 @@ module Debug =
                 layerDepth = 0f
             )
         )
+
+    let line (texture:Texture2D) color (thickness:int) (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
+        let hypotenuse = (stop - start)
+        let length     = int (hypotenuse.Length())
+        let angle      = System.MathF.Atan2(hypotenuse.Y, hypotenuse.X)
+        sb.Draw(
+            texture         = texture,
+            position        = start,
+            scale           = Vector2.One,
+            sourceRectangle = Rectangle(0,0,length,thickness),
+            color           = color,
+            rotation        = angle,
+            origin          = Vector2(0f, float32 thickness / 2f),
+            effects         = SpriteEffects.None,
+            layerDepth      = 0f
+        )
+
+    let rectangle (texture:Texture2D) color (thickness:int) (topLeft:Vector2) (bottomRight:Vector2) (sb:SpriteBatch) =
+        let topRight   = Vector2(bottomRight.X, topLeft.Y)
+        let bottomLeft = Vector2(topLeft.X, bottomRight.Y)
+        let drawLine   = line texture color thickness
+        sb |> drawLine topLeft     topRight
+        sb |> drawLine topRight    bottomRight
+        sb |> drawLine bottomRight bottomLeft
+        sb |> drawLine bottomLeft  topLeft
