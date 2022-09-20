@@ -283,6 +283,9 @@ module Camera =
         MaxZoom               = 2.0
     }
 
+    let withMinMaxZoom min max camera =
+        { camera with MinZoom = min; MaxZoom = max }
+
     let setPosition vec camera =
         camera.CameraPosition <- vec
         camera

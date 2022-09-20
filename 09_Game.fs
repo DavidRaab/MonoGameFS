@@ -12,7 +12,8 @@ type MonoGame<'Assets,'GameState>(init, loadAssets, initModel, update, draw) as 
 
     member this.Graphics    = graphics
     member this.Asset       = assets
-    member this.spriteBatch = sb
+    member this.SpriteBatch = sb
+    member this.Gd          = this.GraphicsDevice
 
     override this.Initialize () =
         init this

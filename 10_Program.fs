@@ -171,7 +171,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     // Update Camera Position
     let updateCamera key (vec:Vector2) =
         if Keyboard.isKeyDown key then
-            Camera.add (vec * (3.0f - float32 State.camera.Zoom) * fDeltaTime) State.camera
+            Camera.add (vec * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
 
     let SpeedPx = 400f
     if Keyboard.isKeyDown Key.Home then
@@ -255,10 +255,10 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
         sb.Begin(transformMatrix = Camera.matrix camera)
         f sb
         sb.End()
-    let onCamera = doSpriteBatch game.spriteBatch
+    let onCamera = doSpriteBatch game.SpriteBatch
 
     let drawRect =
-        Systems.Debug.rectangle game.Asset.Texture.Pixel Color.MidnightBlue 2
+        Systems.Debug.rectangle game.Asset.Texture.Pixel 2 Color.MidnightBlue
 
     onCamera State.camera (fun sb ->
         Systems.View.draw sb
@@ -280,7 +280,7 @@ let init (game:MyGame) =
     game.Content.RootDirectory <- "Content"
     game.IsMouseVisible        <- true
     game.SetResolution width height
-    State.camera       <- Camera.create width height
+    State.camera       <- Camera.create width height |> Camera.withMinMaxZoom 0.03 3
     State.cameraScreen <- Camera.create width height
 
 // Loading Assets

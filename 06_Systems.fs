@@ -108,7 +108,7 @@ module Debug =
             )
         )
 
-    let line (texture:Texture2D) color (thickness:int) (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
+    let line (texture:Texture2D) (thickness:int) color (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
         let hypotenuse = (stop - start)
         let length     = int (hypotenuse.Length())
         let angle      = System.MathF.Atan2(hypotenuse.Y, hypotenuse.X)
@@ -124,11 +124,12 @@ module Debug =
             layerDepth      = 0f
         )
 
-    let rectangle (texture:Texture2D) color (thickness:int) (topLeft:Vector2) (bottomRight:Vector2) (sb:SpriteBatch) =
+    let rectangle (texture:Texture2D) (thickness:int) color (topLeft:Vector2) (bottomRight:Vector2) (sb:SpriteBatch) =
+        let offset     = Vector2(float32 (thickness / 2), 0f)
         let topRight   = Vector2(bottomRight.X, topLeft.Y)
         let bottomLeft = Vector2(topLeft.X, bottomRight.Y)
-        let drawLine   = line texture color thickness
-        sb |> drawLine topLeft     topRight
-        sb |> drawLine topRight    bottomRight
-        sb |> drawLine bottomRight bottomLeft
-        sb |> drawLine bottomLeft  topLeft
+        let drawLine   = line texture thickness color
+        sb |> drawLine (topLeft - offset)     (topRight + offset)
+        sb |> drawLine  topRight               bottomRight
+        sb |> drawLine (bottomRight + offset) (bottomLeft - offset)
+        sb |> drawLine  bottomLeft             topLeft
