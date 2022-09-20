@@ -99,6 +99,9 @@ type Action =
     | Crouch
     | Movement  of Vector2
     | Camera    of Vector2
+    | CameraHome
+    | ZoomIn
+    | ZoomOut
 
 let mutable knightState = IsIdle
 
@@ -110,28 +113,35 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     Systems.Timer.update           deltaTime
     Systems.SheetAnimations.update deltaTime
 
+    // Get all Input of user and maps them into actions
+    let actions = Input.mapInput {
+        Keyboard = [
+            IsPressed (Key.Space, Attack)
+            IsKeyDown (Key.Left,  MoveLeft -Vector2.UnitX)
+            IsKeyDown (Key.Right, MoveRight Vector2.UnitX)
+            IsKeyDown (Key.Down,  Crouch)
+            IsKeyDown (Key.W,     Camera -Vector2.UnitY)
+            IsKeyDown (Key.A,     Camera -Vector2.UnitX)
+            IsKeyDown (Key.S,     Camera  Vector2.UnitY)
+            IsKeyDown (Key.D,     Camera  Vector2.UnitX)
+            IsKeyDown (Key.Home,  CameraHome)
+            IsKeyDown (Key.R,     ZoomIn)
+            IsKeyDown (Key.F,     ZoomOut)
+        ]
+        GamePad = [
+            IsKeyDown (Button.X,         Attack)
+            IsKeyDown (Button.DPadLeft,  MoveLeft  -Vector2.UnitX)
+            IsKeyDown (Button.DPadRight, MoveRight  Vector2.UnitX)
+            IsKeyDown (Button.DPadDown,  Crouch)
+        ]
+        ThumbStick = {
+            Left  = Movement
+            Right = Camera
+        }
+    }
+
     // A state machine, but will be replaced later by some library
     let nextKnightState previousState =
-        // 1. Map all input to actions
-        let actions = Input.mapInput {
-            Keyboard = [
-                IsPressed (Key.Space, Attack)
-                IsKeyDown (Key.Left,  MoveLeft -Vector2.UnitX)
-                IsKeyDown (Key.Right, MoveRight Vector2.UnitX)
-                IsKeyDown (Key.Down,  Crouch)
-            ]
-            GamePad = [
-                IsKeyDown (Button.X,         Attack)
-                IsKeyDown (Button.DPadLeft,  MoveLeft  -Vector2.UnitX)
-                IsKeyDown (Button.DPadRight, MoveRight  Vector2.UnitX)
-                IsKeyDown (Button.DPadDown,  Crouch)
-            ]
-            ThumbStick = {
-                Left  = Movement
-                Right = Camera
-            }
-        }
-
         // helper-function that describes how an action is mapped to a knightState
         let action2state action =
             match action with
@@ -143,7 +153,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
                 if   v.X > 0f then IsRight <| Vector2(v.X,0f)
                 elif v.X < 0f then IsLeft  <| Vector2(v.X,0f)
                 else IsIdle
-            | Camera   v  -> IsIdle
+            | _           -> IsIdle
 
         // 2. Find the next state by mapping every action to a state, and get the one with the highest priority.
         //    For example, when user hits Attack button, it has higher priority as moving
@@ -184,28 +194,17 @@ let fixedUpdate model (deltaTime:TimeSpan) =
             else IsAttack (elapsed,d)
         | _ , wanted  -> setState wanted
 
+    // Compute new Knight State
     knightState <- nextKnightState knightState
 
-    // Update Camera Position
-    let updateCamera key (vec:Vector2) =
-        if Keyboard.isKeyDown key then
-            Camera.add (vec * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
-
-    let SpeedPx = 400f
-    if Keyboard.isKeyDown Key.Home then
-        Camera.setPosition (Vector2.create 0f 0f) State.camera |> ignore
-
-    updateCamera Key.W (Vector2(0f,-SpeedPx))
-    updateCamera Key.A (Vector2(-SpeedPx,0f))
-    updateCamera Key.S (Vector2(0f,SpeedPx))
-    updateCamera Key.D (Vector2(SpeedPx,0f))
-
-
-    // Update Camera Zoom
-    if Keyboard.isKeyDown Key.R then
-        Camera.addZoom (1.0 * deltaTime.TotalSeconds) State.camera
-    if Keyboard.isKeyDown Key.F then
-        Camera.subtractZoom (1.0 * deltaTime.TotalSeconds) State.camera
+    // Update Camera
+    for action in actions do
+        match action with
+        | CameraHome -> Camera.setPosition (Vector2.create 0f 0f) State.camera |> ignore
+        | ZoomIn     -> Camera.addZoom (1.0 * deltaTime.TotalSeconds) State.camera
+        | ZoomOut    -> Camera.subtractZoom (1.0 * deltaTime.TotalSeconds) State.camera
+        | Camera v   -> State.camera |> Camera.add (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime)
+        | _          -> ()
 
     // Resets the Keyboard State
     Keyboard.nextState ()

@@ -91,9 +91,9 @@ module Input =
                 if gs.IsButtonUp   button then actions.Add action
 
         if gs.ThumbSticks.Left <> Vector2.Zero then
-            actions.Add (definition.ThumbStick.Left  gs.ThumbSticks.Left)
+            actions.Add (definition.ThumbStick.Left  (Vector2.flipY gs.ThumbSticks.Left))
         if gs.ThumbSticks.Right <> Vector2.Zero then
-            actions.Add (definition.ThumbStick.Right gs.ThumbSticks.Right)
+            actions.Add (definition.ThumbStick.Right (Vector2.flipY gs.ThumbSticks.Right))
 
         List.ofSeq actions
 
