@@ -79,24 +79,26 @@ let initModel assets =
 
 type KnightState =
     | IsAttack of elapsed:TimeSpan * duration:TimeSpan
-    | IsLeft
-    | IsRight
+    | IsLeft   of Vector2
+    | IsRight  of Vector2
     | IsCrouch
     | IsIdle
 
 let statePriority state =
     match state with
     | IsAttack _ -> 4
-    | IsLeft     -> 3
-    | IsRight    -> 3
+    | IsLeft   _ -> 3
+    | IsRight  _ -> 3
     | IsCrouch   -> 2
     | IsIdle     -> 1
 
 type Action =
     | Attack
-    | MoveLeft
-    | MoveRight
+    | MoveLeft  of Vector2
+    | MoveRight of Vector2
     | Crouch
+    | Movement  of Vector2
+    | Camera    of Vector2
 
 let mutable knightState = IsIdle
 
@@ -108,56 +110,72 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     Systems.Timer.update           deltaTime
     Systems.SheetAnimations.update deltaTime
 
+    // A state machine, but will be replaced later by some library
     let nextKnightState previousState =
+        // 1. Map all input to actions
         let actions = Input.mapInput {
             Keyboard = [
                 IsPressed (Key.Space, Attack)
-                IsKeyDown (Key.Left,  MoveLeft)
-                IsKeyDown (Key.Right, MoveRight)
+                IsKeyDown (Key.Left,  MoveLeft -Vector2.UnitX)
+                IsKeyDown (Key.Right, MoveRight Vector2.UnitX)
                 IsKeyDown (Key.Down,  Crouch)
             ]
             GamePad = [
                 IsKeyDown (Button.X,         Attack)
-                IsKeyDown (Button.DPadLeft,  MoveLeft)
-                IsKeyDown (Button.DPadRight, MoveRight)
+                IsKeyDown (Button.DPadLeft,  MoveLeft  -Vector2.UnitX)
+                IsKeyDown (Button.DPadRight, MoveRight  Vector2.UnitX)
                 IsKeyDown (Button.DPadDown,  Crouch)
             ]
+            ThumbStick = {
+                Left  = Movement
+                Right = Camera
+            }
         }
 
-        let action2state action state =
-            if List.contains action actions then state else IsIdle
+        // helper-function that describes how an action is mapped to a knightState
+        let action2state action =
+            match action with
+            | Attack      -> IsAttack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack"))
+            | MoveLeft  v -> IsLeft v
+            | MoveRight v -> IsRight v
+            | Crouch      -> IsCrouch
+            | Movement v  ->
+                if   v.X > 0f then IsRight <| Vector2(v.X,0f)
+                elif v.X < 0f then IsLeft  <| Vector2(v.X,0f)
+                else IsIdle
+            | Camera   v  -> IsIdle
 
-        let isAttack    = action2state Attack   (IsAttack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack")))
-        let isLeft      = action2state MoveLeft  IsLeft
-        let isRight     = action2state MoveRight IsRight
-        let isCrouch    = action2state Crouch    IsCrouch
-        let wantedState = List.maxBy statePriority [isAttack;isLeft;isRight;isCrouch]
+        // 2. Find the next state by mapping every action to a state, and get the one with the highest priority.
+        //    For example, when user hits Attack button, it has higher priority as moving
+        let wantedState =
+            match List.map action2state actions with
+            | [] -> IsIdle
+            | xs -> List.maxBy statePriority xs
 
-        let setAnim name =
-            model.Knight |> State.SheetAnimations.iter (fun anims ->
-                SheetAnimations.setAnimation name anims
-            )
-
+        // Function that describes the transition to a new state. Mostly it means setting the
+        // correct animation and moving the character
         let setState state =
             match state with
             | IsAttack (e,d) ->
-                setAnim "Attack"; IsAttack (e,d)
+                model.Knight.setAnimation "Attack"; IsAttack (e,d)
             | IsCrouch ->
-                setAnim "Crouch"; IsCrouch
-            | IsLeft         ->
-                setAnim "Run";
+                model.Knight.setAnimation "Crouch"; IsCrouch
+            | IsLeft v       ->
+                model.Knight.setAnimation "Run";
                 model.Knight |> State.View.iter     (View.flipHorizontal true)
-                model.Knight |> State.Position.iter (Position.addX (-200f * fDeltaTime))
-                IsLeft
-            | IsRight        ->
-                setAnim "Run";
+                model.Knight |> State.Position.iter (Position.add (v * 300f * fDeltaTime))
+                IsLeft v
+            | IsRight v     ->
+                model.Knight.setAnimation "Run";
                 model.Knight |> State.View.iter     (View.flipHorizontal false)
-                model.Knight |> State.Position.iter (Position.addX (200f * fDeltaTime))
-                IsRight
+                model.Knight |> State.Position.iter (Position.add (v * 300f * fDeltaTime))
+                IsRight v
             | IsIdle ->
-                setAnim "Idle";
+                model.Knight.setAnimation "Idle";
                 IsIdle
 
+        // 3. Real state machine. Checks the current state, and the new state, and does
+        //    a transition to the new state if allowed.
         match previousState, wantedState with
         | IsAttack (e,d), wantedState ->
             let elapsed = e + deltaTime

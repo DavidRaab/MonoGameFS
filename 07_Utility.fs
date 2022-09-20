@@ -54,9 +54,15 @@ type ButtonState<'Button,'Action> =
     | IsKeyDown  of 'Button * 'Action
     | IsKeyUp    of 'Button * 'Action
 
+type ThumbStick<'Action> = {
+    Left:  Vector2 -> 'Action
+    Right: Vector2 -> 'Action
+}
+
 type Input<'Action> = {
-    Keyboard: ButtonState<Keys,   'Action> list
-    GamePad:  ButtonState<Buttons,'Action> list
+    Keyboard:   ButtonState<Keys,   'Action> list
+    GamePad:    ButtonState<Buttons,'Action> list
+    ThumbStick: ThumbStick<'Action>
 }
 
 module Input =
@@ -83,6 +89,11 @@ module Input =
                 if gs.IsButtonDown button then actions.Add action
             | IsKeyUp   (button,action) ->
                 if gs.IsButtonUp   button then actions.Add action
+
+        if gs.ThumbSticks.Left <> Vector2.Zero then
+            actions.Add (definition.ThumbStick.Left  gs.ThumbSticks.Left)
+        if gs.ThumbSticks.Right <> Vector2.Zero then
+            actions.Add (definition.ThumbStick.Right gs.ThumbSticks.Right)
 
         List.ofSeq actions
 
