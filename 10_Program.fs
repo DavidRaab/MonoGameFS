@@ -280,6 +280,7 @@ let init (game:MyGame) =
     game.Content.RootDirectory <- "Content"
     game.IsMouseVisible        <- true
     game.SetResolution width height
+    Input.Mouse.SetCursor(Input.MouseCursor.Crosshair)
     State.camera       <- Camera.create width height |> Camera.withMinMaxZoom 0.03 3
     State.cameraScreen <- Camera.create width height
 
