@@ -35,6 +35,12 @@ module Extensions =
     let clampf32 (min:float32) max value =
         System.Math.Clamp(value, min, max)
 
+    let inline nearly target difference value =
+        (abs (value - target)) < difference
+
+    let inline notNearly target difference value =
+        not (nearly target difference value)
+
     module Texture2D =
         let create gd width height data =
             let tex = new Texture2D(gd, width, height)
@@ -70,20 +76,15 @@ module Extensions =
             Vector2.Multiply(left, float32 right.TotalSeconds)
         static member toPoint (vec:Vector2) =
             vec.ToPoint ()
-        static member right (scaling:float32) =
-            Vector2(scaling, 0f)
-        static member left (scaling:float32) =
-            Vector2(-scaling, 0f)
-        static member up (scaling:float32) =
-            Vector2(0f, scaling)
-        static member down (scaling:float32) =
-            Vector2(0f, -scaling)
-        static member addX x (vec:Vector2) =
-            Vector2(vec.X+x,vec.Y)
-        static member addY y (vec:Vector2) =
-            Vector2(vec.X,vec.Y+y)
-        static member flipY (vec:Vector2) =
-            Vector2(vec.X,-vec.Y)
+
+        static member left  = Vector2(-1f,  0f)
+        static member right = Vector2( 1f,  0f)
+        static member up    = Vector2( 0f, -1f)
+        static member down  = Vector2( 0f,  1f)
+
+        static member addX x (vec:Vector2) = Vector2(vec.X+x, vec.Y  )
+        static member addY y (vec:Vector2) = Vector2(vec.X  , vec.Y+y)
+        static member flipY (vec:Vector2)  = Vector2(vec.X  ,-vec.Y  )
 
     type System.Collections.Generic.Dictionary<'a,'b> with
         static member add key value (dic:Dictionary<'a,'b>) =

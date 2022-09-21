@@ -54,15 +54,25 @@ type ButtonState<'Button,'Action> =
     | IsKeyDown  of 'Button * 'Action
     | IsKeyUp    of 'Button * 'Action
 
-type ThumbStick<'Action> = {
-    Left:  Vector2 -> 'Action
-    Right: Vector2 -> 'Action
+type GamePadThumbStick<'Action> = {
+    Left:  option<Vector2 -> 'Action>
+    Right: option<Vector2 -> 'Action>
+}
+
+type GamePadTriggers<'Action> = {
+    Left:  option<float32 -> 'Action>
+    Right: option<float32 -> 'Action>
+}
+
+type InputGamePad<'Action> = {
+    Buttons:    ButtonState<Buttons,'Action> list
+    ThumbStick: GamePadThumbStick<'Action>
+    Trigger:    GamePadTriggers<'Action>
 }
 
 type Input<'Action> = {
-    Keyboard:   ButtonState<Keys,   'Action> list
-    GamePad:    ButtonState<Buttons,'Action> list
-    ThumbStick: ThumbStick<'Action>
+    Keyboard:   ButtonState<Keys,'Action> list
+    GamePad:    InputGamePad<'Action>
 }
 
 module Input =
@@ -72,6 +82,7 @@ module Input =
 
         let actions = ResizeArray<_>()
 
+        // Keyboard Input Handling
         for action in definition.Keyboard do
             match action with
             | IsPressed  (button,action) ->
@@ -83,17 +94,33 @@ module Input =
             | IsKeyUp    (button,action) ->
                 if Keyboard.isKeyUp    button then actions.Add action
 
-        for action in definition.GamePad do
+        // GamePad Buttons Handling
+        for action in definition.GamePad.Buttons do
             match action with
             | IsKeyDown (button,action) ->
                 if gs.IsButtonDown button then actions.Add action
             | IsKeyUp   (button,action) ->
                 if gs.IsButtonUp   button then actions.Add action
 
+        // GamePad ThumbStick Handling
         if gs.ThumbSticks.Left <> Vector2.Zero then
-            actions.Add (definition.ThumbStick.Left  (Vector2.flipY gs.ThumbSticks.Left))
+            definition.GamePad.ThumbStick.Left |> Option.iter (fun f ->
+                actions.Add (f (Vector2.flipY gs.ThumbSticks.Left))
+            )
         if gs.ThumbSticks.Right <> Vector2.Zero then
-            actions.Add (definition.ThumbStick.Right (Vector2.flipY gs.ThumbSticks.Right))
+            definition.GamePad.ThumbStick.Right |> Option.iter (fun f ->
+                actions.Add (f (Vector2.flipY gs.ThumbSticks.Right))
+            )
+
+        // GamePad Triggers
+        if gs.Triggers.Left |> notNearly 0.0f 0.0001f then
+            definition.GamePad.Trigger.Left |> Option.iter (fun f ->
+                actions.Add (f gs.Triggers.Left)
+            )
+        if gs.Triggers.Right |> notNearly 0.0f 0.0001f then
+            definition.GamePad.Trigger.Right |> Option.iter (fun f ->
+                actions.Add (f gs.Triggers.Right)
+            )
 
         List.ofSeq actions
 

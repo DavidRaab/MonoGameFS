@@ -60,7 +60,7 @@ let initModel assets =
             ))
 
     Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
-        let vec = if state then Vector2.right 10f else Vector2.left 10f
+        let vec = if state then Vector2.right * 10f else Vector2.left * 10f
         for box in boxes do
             State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
         State (not state)
@@ -117,26 +117,32 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     let actions = Input.mapInput {
         Keyboard = [
             IsPressed (Key.Space, Attack)
-            IsKeyDown (Key.Left,  MoveLeft -Vector2.UnitX)
-            IsKeyDown (Key.Right, MoveRight Vector2.UnitX)
+            IsKeyDown (Key.Left,  MoveLeft  Vector2.left )
+            IsKeyDown (Key.Right, MoveRight Vector2.right)
             IsKeyDown (Key.Down,  Crouch)
-            IsKeyDown (Key.W,     Camera -Vector2.UnitY)
-            IsKeyDown (Key.A,     Camera -Vector2.UnitX)
-            IsKeyDown (Key.S,     Camera  Vector2.UnitY)
-            IsKeyDown (Key.D,     Camera  Vector2.UnitX)
+            IsKeyDown (Key.W,     Camera Vector2.up)
+            IsKeyDown (Key.A,     Camera Vector2.left)
+            IsKeyDown (Key.S,     Camera Vector2.down)
+            IsKeyDown (Key.D,     Camera Vector2.right)
             IsKeyDown (Key.Home,  CameraHome)
             IsKeyDown (Key.R,     ZoomIn)
             IsKeyDown (Key.F,     ZoomOut)
         ]
-        GamePad = [
-            IsKeyDown (Button.X,         Attack)
-            IsKeyDown (Button.DPadLeft,  MoveLeft  -Vector2.UnitX)
-            IsKeyDown (Button.DPadRight, MoveRight  Vector2.UnitX)
-            IsKeyDown (Button.DPadDown,  Crouch)
-        ]
-        ThumbStick = {
-            Left  = Movement
-            Right = Camera
+        GamePad = {
+            Buttons = [
+                IsKeyDown (Button.X,         Attack)
+                IsKeyDown (Button.DPadLeft,  MoveLeft  Vector2.left)
+                IsKeyDown (Button.DPadRight, MoveRight Vector2.right)
+                IsKeyDown (Button.DPadDown,  Crouch)
+            ]
+            ThumbStick = {
+                Left  = Some Movement
+                Right = Some Camera
+            }
+            Trigger = {
+                Left  = Some (fun m -> MoveLeft  (Vector2.left  * m))
+                Right = Some (fun m -> MoveRight (Vector2.right * m))
+            }
         }
     }
 
@@ -200,10 +206,10 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     // Update Camera
     for action in actions do
         match action with
-        | CameraHome -> Camera.setPosition (Vector2.create 0f 0f) State.camera |> ignore
-        | ZoomIn     -> Camera.addZoom (1.0 * deltaTime.TotalSeconds) State.camera
+        | CameraHome -> Camera.setPosition  (Vector2.create 0f 0f) State.camera |> ignore
+        | ZoomIn     -> Camera.addZoom      (1.0 * deltaTime.TotalSeconds) State.camera
         | ZoomOut    -> Camera.subtractZoom (1.0 * deltaTime.TotalSeconds) State.camera
-        | Camera v   -> State.camera |> Camera.add (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime)
+        | Camera v   -> Camera.add          (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
         | _          -> ()
 
     // Resets the Keyboard State
