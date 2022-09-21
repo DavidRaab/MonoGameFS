@@ -66,6 +66,22 @@ module Extensions =
                 layerDepth      = layerDepth
             )
 
+        member this.DrawO(
+            texture: Texture2D, position: Vector2,
+            ?sourceRectangle: Rectangle, ?scale: Vector2, ?color: Color,
+            ?rotation: float<rad>, ?origin: Vector2,
+            ?effects: SpriteEffects, ?layerDepth: float32
+        ) =
+            let srcRect    = defaultArg sourceRectangle (Rectangle(0,0,texture.Width, texture.Height))
+            let scale      = defaultArg scale            Vector2.One
+            let color      = defaultArg color            Color.White
+            let rotation   = defaultArg rotation         0.0<rad>
+            let origin     = defaultArg origin           Vector2.Zero
+            let effects    = defaultArg effects          SpriteEffects.None
+            let layerDepth = defaultArg layerDepth       0f
+            this.Draw(texture, position, scale, srcRect, color, rotation, origin, effects, layerDepth)
+
+
     module TimeSpan =
         let oneSecond = sec 1.0
 
