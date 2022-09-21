@@ -74,8 +74,9 @@ module Extensions =
             Vector2(x,y)
         static member Multiply (left:Vector2, right:TimeSpan) =
             Vector2.Multiply(left, float32 right.TotalSeconds)
-        static member toPoint (vec:Vector2) =
-            vec.ToPoint ()
+
+        static member toPoint (vec:Vector2) = vec.ToPoint ()
+        static member length  (vec:Vector2) = vec.Length ()
 
         static member left  = Vector2(-1f,  0f)
         static member right = Vector2( 1f,  0f)

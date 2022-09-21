@@ -110,8 +110,8 @@ module Debug =
 
     let line (texture:Texture2D) (thickness:int) color (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
         let hypotenuse = (stop - start)
-        let length     = int (hypotenuse.Length())
-        let angle      = System.MathF.Atan2(hypotenuse.Y, hypotenuse.X)
+        let length     = int (Vector2.length hypotenuse)
+        let angle      = atan2 hypotenuse.Y hypotenuse.X
         sb.Draw(
             texture         = texture,
             position        = start,
