@@ -32,7 +32,7 @@ module Extensions =
     let clamp (min:float) max value =
         System.Math.Clamp(value, min, max)
 
-    let clampf32 (min:float32) max value =
+    let clampF (min:float32) max value =
         System.Math.Clamp(value, min, max)
 
     let inline nearly target difference value =
