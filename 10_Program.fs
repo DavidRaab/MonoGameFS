@@ -11,7 +11,7 @@ open Microsoft.Xna.Framework.Graphics
 
 // Only load the Keys -- I have my own Input Implementation on top of MonoGame
 type Key    = Input.Keys
-type Button = Input.Buttons
+type Button = FGamePadButton
 
 // Model
 type Model = {
@@ -114,7 +114,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     Systems.SheetAnimations.update deltaTime
 
     // Get all Input of user and maps them into actions
-    let actions = Input.mapInput {
+    let actions = FInput.mapInput {
         Keyboard = [
             IsPressed (Key.Space, Attack)
             IsKeyDown (Key.Left,  MoveLeft  Vector2.left )
@@ -130,7 +130,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         ]
         GamePad = {
             Buttons = [
-                IsKeyDown (Button.X,         Attack)
+                IsPressed (Button.X,         Attack)
                 IsKeyDown (Button.DPadLeft,  MoveLeft  Vector2.left)
                 IsKeyDown (Button.DPadRight, MoveRight Vector2.right)
                 IsKeyDown (Button.DPadDown,  Crouch)
@@ -213,7 +213,8 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         | _          -> ()
 
     // Resets the Keyboard State
-    Keyboard.nextState ()
+    FKeyboard.nextState ()
+    FGamePad.nextState ()
     model
 
 // Type Alias for my game
@@ -221,11 +222,13 @@ type MyGame = MonoGame<Assets,Model>
 
 let mutable fixedUpdateElapsedTime = TimeSpan.Zero
 let update (model:Model) (gameTime:GameTime) (game:MyGame) =
-    // Get current keyboard state and add it to our KeyBoard module
-    // This way we ensure that fixedUpdate has correct keyboard state between
+    // Get current keyboard/GamePad state and add it to our KeyBoard/GamePad module
+    // This way we ensure that fixedUpdate has correct keyboard/GamePad state between
     // fixedUpdate calls and not just from the current update.
     let keyboard = Input.Keyboard.GetState ()
-    Keyboard.addKeys (keyboard.GetPressedKeys())
+    FKeyboard.addKeys (keyboard.GetPressedKeys())
+    let gamepad  = Input.GamePad.GetState(0)
+    FGamePad.addState gamepad
 
     // Close Game
     if keyboard.IsKeyDown Key.Escape then
