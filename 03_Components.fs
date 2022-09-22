@@ -313,5 +313,8 @@ module Camera =
     let screenToWorld position camera =
         Vector2.Transform(position, Matrix.Invert (matrix camera))
 
+    let screenPointToWorld (position:Point) camera =
+        Vector2.Transform(position.ToVector2(), Matrix.Invert (matrix camera))
+
     let worldToScreen position camera =
         Vector2.Transform(position, matrix camera)

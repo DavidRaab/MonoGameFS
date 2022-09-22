@@ -14,9 +14,15 @@ type Key    = Input.Keys
 type Button = FGamePadButton
 
 // Model
+type MouseRectangle =
+    | NoRectangle
+    | StartRectangle of Vector2
+    | DrawRectangle  of Vector2 * Point
+    | EndRectangle   of Vector2 * Vector2
+
 type Model = {
-    Knight: Entity
-    Point:  Vector2
+    Knight:         Entity
+    MouseRectangle: MouseRectangle
 }
 
 // Initialize the Game Model
@@ -72,8 +78,8 @@ let initModel assets =
     ))
 
     let gameState = {
-        Knight = knight
-        Point  = Vector2(200f,0f)
+        Knight         = knight
+        MouseRectangle = NoRectangle
     }
     gameState
 
@@ -102,6 +108,9 @@ type Action =
     | CameraHome
     | ZoomIn
     | ZoomOut
+    | DragStart   of Vector2
+    | DragBetween of Point
+    | DragEnd     of Vector2
 
 let mutable knightState = IsIdle
 
@@ -116,24 +125,25 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     // Get all Input of user and maps them into actions
     let actions = FInput.mapInput {
         Keyboard = [
-            IsPressed (Key.Space, Attack)
-            IsKeyDown (Key.Left,  MoveLeft  Vector2.left )
-            IsKeyDown (Key.Right, MoveRight Vector2.right)
-            IsKeyDown (Key.Down,  Crouch)
-            IsKeyDown (Key.W,     Camera Vector2.up)
-            IsKeyDown (Key.A,     Camera Vector2.left)
-            IsKeyDown (Key.S,     Camera Vector2.down)
-            IsKeyDown (Key.D,     Camera Vector2.right)
-            IsKeyDown (Key.Home,  CameraHome)
-            IsKeyDown (Key.R,     ZoomIn)
-            IsKeyDown (Key.F,     ZoomOut)
+            Key.Space, IsPressed, Attack
+            Key.Space, IsPressed, Attack
+            Key.Left,  IsKeyDown, MoveLeft  Vector2.left
+            Key.Right, IsKeyDown, MoveRight Vector2.right
+            Key.Down,  IsKeyDown, Crouch
+            Key.W,     IsKeyDown, Camera Vector2.up
+            Key.A,     IsKeyDown, Camera Vector2.left
+            Key.S,     IsKeyDown, Camera Vector2.down
+            Key.D,     IsKeyDown, Camera Vector2.right
+            Key.Home,  IsKeyDown, CameraHome
+            Key.R,     IsKeyDown, ZoomIn
+            Key.F,     IsKeyDown, ZoomOut
         ]
         GamePad = {
             Buttons = [
-                IsPressed (Button.X,         Attack)
-                IsKeyDown (Button.DPadLeft,  MoveLeft  Vector2.left)
-                IsKeyDown (Button.DPadRight, MoveRight Vector2.right)
-                IsKeyDown (Button.DPadDown,  Crouch)
+                Button.X,         IsPressed, Attack
+                Button.DPadLeft,  IsKeyDown, MoveLeft  Vector2.left
+                Button.DPadRight, IsKeyDown, MoveRight Vector2.right
+                Button.DPadDown,  IsKeyDown, Crouch
             ]
             ThumbStick = {
                 Left  = Some Movement
@@ -144,7 +154,48 @@ let fixedUpdate model (deltaTime:TimeSpan) =
                 Right = Some (fun m -> MoveRight (Vector2.right * m))
             }
         }
+        Mouse = {
+            Camera  = State.camera
+            Buttons = [
+                MouseButton.Left, IsPressed,  World (DragStart)
+                MouseButton.Left, IsKeyDown,  Screen(DragBetween)
+                MouseButton.Left, IsReleased, World (DragEnd)
+            ]
+            ScrollWheel           = None
+            HorizontalScrollWheel = None
+            Position              = None
+        }
     }
+
+    // Handle Rectangle Drawing
+    let model =
+        let action = actions |> List.tryFind (fun a ->
+            match a with
+            | DragStart _ | DragBetween _ | DragEnd _ -> true
+            | _ -> false
+        )
+        match action with
+        | Some (DragStart start) ->
+            { model with MouseRectangle = StartRectangle start }
+        | Some (DragBetween p) ->
+            let mr =
+                match model.MouseRectangle with
+                | NoRectangle             -> StartRectangle (Camera.screenPointToWorld p State.camera)
+                | StartRectangle start    -> DrawRectangle  (start,p)
+                | DrawRectangle (start,_) -> DrawRectangle  (start,p)
+                | EndRectangle  (_, _)    -> StartRectangle (Camera.screenPointToWorld p State.camera)
+            { model with MouseRectangle = mr }
+        | Some (DragEnd stop) ->
+            let mr =
+                match model.MouseRectangle with
+                | NoRectangle             -> NoRectangle
+                | StartRectangle start    -> NoRectangle
+                | DrawRectangle (start,_) -> EndRectangle (start,stop)
+                | EndRectangle  (_, _)    -> NoRectangle
+            { model with MouseRectangle = mr }
+        | Some _ -> model
+        | None   -> model
+
 
     // A state machine, but will be replaced later by some library
     let nextKnightState previousState =
@@ -161,14 +212,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
                 else IsIdle
             | _           -> IsIdle
 
-        // 2. Find the next state by mapping every action to a state, and get the one with the highest priority.
-        //    For example, when user hits Attack button, it has higher priority as moving
-        let wantedState =
-            match List.map action2state actions with
-            | [] -> IsIdle
-            | xs -> List.maxBy statePriority xs
-
-        // Function that describes the transition to a new state. Mostly it means setting the
+        // helper-function that describes the transition to a new state. Mostly it means setting the
         // correct animation and moving the character
         let setState state =
             match state with
@@ -190,7 +234,14 @@ let fixedUpdate model (deltaTime:TimeSpan) =
                 model.Knight.setAnimation "Idle";
                 IsIdle
 
-        // 3. Real state machine. Checks the current state, and the new state, and does
+        // 1. Find the next state by mapping every action to a state, and get the one with the highest priority.
+        //    For example, when user hits Attack button, it has higher priority as moving
+        let wantedState =
+            match List.map action2state actions with
+            | [] -> IsIdle
+            | xs -> List.maxBy statePriority xs
+
+        // 2. Real state machine. Checks the current state, and the new state, and does
         //    a transition to the new state if allowed.
         match previousState, wantedState with
         | IsAttack (e,d), wantedState ->
@@ -214,7 +265,8 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
     // Resets the Keyboard State
     FKeyboard.nextState ()
-    FGamePad.nextState ()
+    FGamePad.nextState  ()
+    FMouse.nextState    ()
     model
 
 // Type Alias for my game
@@ -229,6 +281,8 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     FKeyboard.addKeys (keyboard.GetPressedKeys())
     let gamepad  = Input.GamePad.GetState(0)
     FGamePad.addState gamepad
+    let mouse    = Input.Mouse.GetState ()
+    FMouse.addState mouse
 
     // Close Game
     if keyboard.IsKeyDown Key.Escape then
@@ -245,12 +299,6 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
             fixedUpdate model fixedUpdateTiming
         else
             model
-
-    let mouse = Input.Mouse.GetState()
-    let point =
-        if mouse.LeftButton = Input.ButtonState.Pressed
-        then Camera.screenToWorld (mouse.Position.ToVector2()) State.camera
-        else model.Point
 
     (*
     // Vibration through Triggers
@@ -270,9 +318,7 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
         game.Exit()
     *)
 
-    { model with
-        Point = point
-    }
+    model
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
@@ -288,7 +334,15 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
 
     onCamera State.camera (fun sb ->
         Systems.View.draw sb
-        drawRect (Vector2.create 100f 100f) model.Point sb
+
+        match model.MouseRectangle with
+        | NoRectangle         -> ()
+        | StartRectangle p    -> ()
+        | DrawRectangle (start,stop) ->
+            let stop = Camera.screenPointToWorld stop State.camera
+            drawRect start stop sb
+        | EndRectangle (start,stop) ->
+            drawRect start stop sb
     )
 
     onCamera State.cameraScreen (fun sb ->
