@@ -35,14 +35,14 @@ type State<'Component>() =
             ()
 
     member _.map f entity =
-        let mutable value = Unchecked.defaultof<_>
-        if state.TryGetValue(entity, &value) then
-            state.[entity] <- f value
+        match state.TryGetValue entity with
+        | true, value -> state.[entity] <- f value
+        | false, _    -> ()
 
     member _.iter f entity =
-        let mutable value = Unchecked.defaultof<_>
-        if state.TryGetValue(entity, &value) then
-            f value
+        match state.TryGetValue entity with
+        | true, value -> f value
+        | false, _    -> ()
 
     member this.delete entity =
         state.Remove entity |> ignore

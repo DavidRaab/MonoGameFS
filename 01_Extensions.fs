@@ -110,27 +110,25 @@ module Extensions =
             else dic.Add(key,value)
 
         static member change key f (dic:Dictionary<'a,'b>) =
-            let mutable value = Unchecked.defaultof<_>
-            if dic.TryGetValue(key, &value) then
+            match dic.TryGetValue key with
+            | true, value ->
                 match f (ValueSome value) with
                 | ValueNone   -> ignore (dic.Remove key)
                 | ValueSome x -> dic.[key] <- x
-            else
+            | false, _ ->
                 match f ValueNone with
                 | ValueNone   -> ()
                 | ValueSome x -> dic.Add(key, x)
 
         static member changeValue defaultValue key f (dic:Dictionary<'a,'b>) =
-            let mutable value = Unchecked.defaultof<_>
-            if   dic.TryGetValue(key, &value)
-            then dic.[key] <- f value
-            else dic.Add(key, f defaultValue)
+            match dic.TryGetValue key with
+            | true, value -> dic.[key] <- f value
+            | false, _    -> dic.Add(key, f defaultValue)
 
         static member find key (dic:Dictionary<'a,'b>) =
-            let mutable value = Unchecked.defaultof<_>
-            if   dic.TryGetValue(key, &value)
-            then ValueSome value
-            else ValueNone
+            match dic.TryGetValue key with
+            | true, value -> ValueSome value
+            | false, _    -> ValueNone
 
     module Map =
         let changeValue (init:'Value) (key:'Key) f map =
