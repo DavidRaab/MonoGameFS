@@ -188,12 +188,16 @@ type FMouseState() =
             ms.XButton2,     MouseButton.XButton2
         ]
         position              <- Point(ms.X, ms.Y)
-        scrollWheel           <- scrollWheel  + ms.ScrollWheelValue
-        horizontalScrollWheel <- horizontalScrollWheel + ms.HorizontalScrollWheelValue
+        scrollWheel           <- ms.ScrollWheelValue
+        horizontalScrollWheel <- ms.HorizontalScrollWheelValue
 
-    member this.Position              = position
-    member this.ScrollWheel           = scrollWheel
-    member this.HorizontalScrollWheel = horizontalScrollWheel
+    member this.Position = position
+    member this.ScrollWheel
+        with get () = scrollWheel
+        and  set  x = scrollWheel <- x
+    member this.HorizontalScrollWheel
+        with get () = horizontalScrollWheel
+        and  set  x = horizontalScrollWheel <- x
 
     member this.IsKeyDown button =
         this.GetButton(button) = true
@@ -208,8 +212,10 @@ module FMouse =
         currentState.AddMouseState mouseState
 
     let nextState () =
-        previousState <- currentState
-        currentState  <- FMouseState ()
+        previousState                      <- currentState
+        currentState                       <- FMouseState ()
+        currentState.ScrollWheel           <- previousState.ScrollWheel
+        currentState.HorizontalScrollWheel <- previousState.HorizontalScrollWheel
 
     /// `true` only in the exact frame the button was pressed
     let isPressed button =
@@ -226,8 +232,8 @@ module FMouse =
         currentState.IsKeyUp button
 
     let position              () = currentState.Position
-    let scrollWheel           () = currentState.ScrollWheel
-    let horizontalScrollWheel () = currentState.HorizontalScrollWheel
+    let scrollWheel           () = currentState.ScrollWheel           - previousState.ScrollWheel
+    let horizontalScrollWheel () = currentState.HorizontalScrollWheel - previousState.HorizontalScrollWheel
 
 // Input Module
 type ButtonState =

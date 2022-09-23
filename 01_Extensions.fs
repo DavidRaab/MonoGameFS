@@ -14,6 +14,32 @@ module Extensions =
     [<Measure>] type rad
     [<Measure>] type deg
 
+    // Partial Active Patterns
+    let (|IsGreater|_|) target input = if input > target then Some input else None
+    let (|IsSmaller|_|) target input = if input < target then Some input else None
+    let (|IsEqual|_|)   target input = if input = target then Some input else None
+
+    // Common dispatch for Numbers. Do something if number
+    // is greater, smaller or equal zero
+    let inline cmp fGreater fSmaller fEqual x =
+        if   x > 0.0 then fGreater x
+        elif x < 0.0 then fSmaller x
+        else fEqual x
+
+    let inline cmpF fGreater fSmaller fEqual x =
+        if   x > 0.0f then fGreater x
+        elif x < 0.0f then fSmaller x
+        else fEqual x
+
+    let inline cmpInt fGreater fSmaller fEqual x =
+        if   x > 0 then fGreater x
+        elif x < 0 then fSmaller x
+        else fEqual x
+
+    // Returns always the same value as a function
+    let is x _ = x
+
+    // StackTrace as a String
     let stackTrace (skip:int) =
         let skip = if skip < 0 then 1 else skip+1
         let st   = System.Diagnostics.StackTrace(skip, true)

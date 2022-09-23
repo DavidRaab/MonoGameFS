@@ -106,6 +106,7 @@ type Action =
     | Movement  of Vector2
     | Camera    of Vector2
     | CameraHome
+    | ScrollZoom  of int
     | ZoomIn
     | ZoomOut
     | DragStart   of Vector2
@@ -161,7 +162,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
                 MouseButton.Left, IsKeyDown,  Screen(DragBetween)
                 MouseButton.Left, IsReleased, World (DragEnd)
             ]
-            ScrollWheel           = None
+            ScrollWheel           = Some (cmpInt (is ScrollZoom 1) (is ScrollZoom -1) (is ScrollZoom 0))
             HorizontalScrollWheel = None
             Position              = None
         }
@@ -169,8 +170,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
 
     // Handle Rectangle Drawing
     let model =
-        let action = actions |> List.tryFind (fun a ->
-            match a with
+        let action = actions |> List.tryFind (function
             | DragStart _ | DragBetween _ | DragEnd _ -> true
             | _ -> false
         )
@@ -200,8 +200,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     // A state machine, but will be replaced later by some library
     let nextKnightState previousState =
         // helper-function that describes how an action is mapped to a knightState
-        let action2state action =
-            match action with
+        let action2state = function
             | Attack      -> IsAttack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack"))
             | MoveLeft  v -> IsLeft v
             | MoveRight v -> IsRight v
@@ -257,11 +256,13 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     // Update Camera
     for action in actions do
         match action with
-        | CameraHome -> Camera.setPosition  (Vector2.create 0f 0f) State.camera |> ignore
-        | ZoomIn     -> Camera.addZoom      (1.0 * deltaTime.TotalSeconds) State.camera
-        | ZoomOut    -> Camera.subtractZoom (1.0 * deltaTime.TotalSeconds) State.camera
-        | Camera v   -> Camera.add          (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
-        | _          -> ()
+        | CameraHome                 -> Camera.setPosition   (Vector2.create 0f 0f) State.camera |> ignore
+        | ZoomIn                     -> Camera.addZoom       (1.0 * deltaTime.TotalSeconds) State.camera
+        | ZoomOut                    -> Camera.subtractZoom  (1.0 * deltaTime.TotalSeconds) State.camera
+        | ScrollZoom (IsGreater 0 x) -> Camera.addZoom        0.1 State.camera
+        | ScrollZoom (IsSmaller 0 x) -> Camera.subtractZoom   0.1 State.camera
+        | Camera v                   -> Camera.add           (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
+        | _                          -> ()
 
     // Resets the Keyboard State
     FKeyboard.nextState ()
