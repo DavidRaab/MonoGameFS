@@ -28,12 +28,12 @@ type Model = {
 // Initialize the Game Model
 let initModel assets =
     let box = Entity.init (fun e ->
-        e.addPosition (Position.createXY 0f 0f)
+        e.addTransform (Transform.position (Vector2.create 0f 0f))
         e.addView     (View.fromTexture assets.Texture.WhiteBox FG1)
     )
 
     let arrow = Entity.init (fun e ->
-        e.addPosition (Position.createXY 100f 100f)
+        e.addTransform (Transform.position (Vector2.create 100f 100f))
         e.addView     (
             View.fromTexture assets.Texture.Arrow FG1
             |> View.withOrigin Center
@@ -47,7 +47,7 @@ let initModel assets =
     )
 
     let knight = Entity.init (fun e ->
-        e.addPosition (Position.createXY 427f 0f)
+        e.addTransform (Transform.position (Vector2.create 427f 0f))
         e.addView     (
             SheetAnimations.toView FG1 assets.Knight
             |> View.setScale (Vector2.create 3f 3f)
@@ -61,14 +61,14 @@ let initModel assets =
     for x=1 to 75 do
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
-                box.addPosition (Position.createXY (float32 x * 11f) (float32 y * 11f + yOffset))
+                box.addTransform (Transform.position (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)))
                 box.addView     (View.fromTexture assets.Texture.WhiteBox BG1)
             ))
 
     Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
         let vec = if state then Vector2.right * 10f else Vector2.left * 10f
         for box in boxes do
-            State.Position.map (fun pos -> {pos with Position = pos.Position + vec}) box
+            State.Transform.map (fun pos -> {pos with Position = pos.Position + vec}) box
         State (not state)
     ))
 
@@ -221,13 +221,13 @@ let fixedUpdate model (deltaTime:TimeSpan) =
                 model.Knight.setAnimation "Crouch"; IsCrouch
             | IsLeft v       ->
                 model.Knight.setAnimation "Run";
-                model.Knight |> State.View.iter     (View.flipHorizontal true)
-                model.Knight |> State.Position.iter (Position.add (v * 300f * fDeltaTime))
+                model.Knight |> State.View.iter      (View.flipHorizontal true)
+                model.Knight |> State.Transform.iter (Transform.addPosition (v * 300f * fDeltaTime))
                 IsLeft v
             | IsRight v     ->
                 model.Knight.setAnimation "Run";
-                model.Knight |> State.View.iter     (View.flipHorizontal false)
-                model.Knight |> State.Position.iter (Position.add (v * 300f * fDeltaTime))
+                model.Knight |> State.View.iter      (View.flipHorizontal false)
+                model.Knight |> State.Transform.iter (Transform.addPosition (v * 300f * fDeltaTime))
                 IsRight v
             | IsIdle ->
                 model.Knight.setAnimation "Idle";

@@ -8,8 +8,10 @@ type TimeSpan = System.TimeSpan
 type Entity =
     Entity of int
 
-type Position = {
-    mutable Position: Vector2
+type Transform = {
+    mutable Position:  Vector2
+    mutable Direction: Vector2
+    mutable Scale:     Vector2
 }
 
 type Origin =

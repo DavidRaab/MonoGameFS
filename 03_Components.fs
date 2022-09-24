@@ -58,28 +58,38 @@ module Origin =
             | Position (x,y) -> x,y
         Vector2(x,y)
 
-module Position =
-    let create pos =
-        { Position = pos }
+module Transform =
+    let create pos dir scale : Transform = {
+        Position  = pos
+        Direction = dir
+        Scale     = scale
+    }
 
-    let setPosition newPos pos =
-        pos.Position <- newPos
-        pos
+    let empty =
+        create Vector2.Zero Vector2.Zero Vector2.One
 
-    let createXY x y =
-        create (Vector2.create x y)
+    let setPosition newPos (t:Transform) =
+        t.Position <- newPos
+        t
+
+    let setDirection newDir (t:Transform) =
+        t.Direction <- newDir
+        t
+
+    let setScale newScale (t:Transform) =
+        t.Scale <- newScale
+        t
+
+    let position pos =
+        create pos Vector2.down Vector2.One
+
+    let positionDirection pos dir =
+        create pos dir Vector2.One
 
     /// Adds a vector to the Position
-    let add vec2 pos =
+    let addPosition vec2 pos =
         pos.Position <- pos.Position + vec2
 
-    /// Adds X value to the X Position
-    let addX x pos =
-        pos.Position <- Vector2.addX x pos.Position
-
-    /// Adds X value to the Y Position
-    let addY y pos =
-        pos.Position <- Vector2.addY y pos.Position
 
 module View =
     let layerToFloat layer =

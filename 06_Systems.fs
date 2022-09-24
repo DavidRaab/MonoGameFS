@@ -14,18 +14,18 @@ type TimeSpan = System.TimeSpan
 // View System draws entity
 module View =
     let draw (sb:SpriteBatch) =
-        let posAndView = [|
-            for entity in Entity.positionsAndView.GetCache() do
-                match State.Position.get entity, State.View.get entity with
-                | ValueSome p, ValueSome v -> p,v
+        let transformAndView = [|
+            for entity in Entity.transformAndView.GetCache() do
+                match State.Transform.get entity, State.View.get entity with
+                | ValueSome t, ValueSome v -> t,v
                 | _                        -> ()
         |]
-        posAndView |> Array.sortInPlaceBy (fun (p,v) -> v.Layer)
-        for pos,view in posAndView do
+        transformAndView |> Array.sortInPlaceBy (fun (t,v) -> v.Layer)
+        for transform,view in transformAndView do
             if view.IsVisible then
                 sb.Draw(
                     texture         = view.Texture,
-                    position        = pos.Position,
+                    position        = transform.Position,
                     scale           = view.Scale,
                     sourceRectangle = view.SrcRect,
                     color           = view.Tint,
@@ -38,10 +38,10 @@ module View =
 // Moves those who should be moved
 module Movement =
     let update (deltaTime:TimeSpan) =
-        for entity in Entity.positionsAndMovement.GetCache () do
-            entity |> State.Movement.iter (fun mov ->
-            entity |> State.Position.map  (fun pos ->
-                Position.create (pos.Position + (mov.Direction * float32 deltaTime.TotalSeconds))
+        for entity in Entity.transformAndMovement.GetCache () do
+            entity |> State.Movement.iter   (fun mov ->
+            entity |> State.Transform.iter  (fun t ->
+                Transform.addPosition (t.Position + (mov.Direction * float32 deltaTime.TotalSeconds)) t
             ))
 
 module Timer =
@@ -89,13 +89,13 @@ module Debug =
         )
 
     let trackPosition (sb:SpriteBatch) (font:SpriteFont) (entity:Entity) (whereToDraw:Vector2) =
-        entity |> State.Position.iter (fun pos ->
-            let screen = Camera.worldToScreen pos.Position State.camera
+        entity |> State.Transform.iter (fun t ->
+            let screen = Camera.worldToScreen t.Position State.camera
             sb.DrawString(
                 spriteFont = font,
                 text       =
                     System.String.Format("World({0:0.00},{1:0.00}) Screen({2:0},{3:0})",
-                        pos.Position.X, pos.Position.Y,
+                        t.Position.X, t.Position.Y,
                         screen.X, screen.Y
                     ),
                 position   = whereToDraw,
