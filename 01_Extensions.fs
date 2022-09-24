@@ -74,38 +74,20 @@ module Extensions =
             tex
 
     type Graphics.SpriteBatch with
-        member this.Draw(
-            texture         : Texture2D,  position : Vector2, scale   : Vector2,
-            sourceRectangle : Rectangle,  color    : Color,
-            rotation        : float<rad>, origin   : Vector2, effects : SpriteEffects,
-            layerDepth      : float32
-        ) =
-            this.Draw(
-                texture         = texture,
-                position        = position,
-                scale           = scale,
-                sourceRectangle = sourceRectangle,
-                color           = color,
-                rotation        = float32 rotation,
-                origin          = origin,
-                effects         = effects,
-                layerDepth      = layerDepth
-            )
-
         member this.DrawO(
             texture: Texture2D, position: Vector2,
             ?sourceRectangle: Rectangle, ?scale: Vector2, ?color: Color,
-            ?rotation: float<rad>, ?origin: Vector2,
+            ?rotation: float32, ?origin: Vector2,
             ?effects: SpriteEffects, ?layerDepth: float32
         ) =
             let srcRect    = defaultArg sourceRectangle (Rectangle(0,0,texture.Width, texture.Height))
             let scale      = defaultArg scale            Vector2.One
             let color      = defaultArg color            Color.White
-            let rotation   = defaultArg rotation         0.0<rad>
+            let rotation   = defaultArg rotation         0.0f
             let origin     = defaultArg origin           Vector2.Zero
             let effects    = defaultArg effects          SpriteEffects.None
             let layerDepth = defaultArg layerDepth       0f
-            this.Draw(texture, position, scale, srcRect, color, rotation, origin, effects, layerDepth)
+            this.Draw(texture, position, srcRect, color, rotation, origin, scale, effects, layerDepth)
 
 
     module TimeSpan =
@@ -128,6 +110,12 @@ module Extensions =
         static member addX x (vec:Vector2) = Vector2(vec.X+x, vec.Y  )
         static member addY y (vec:Vector2) = Vector2(vec.X  , vec.Y+y)
         static member flipY  (vec:Vector2) = Vector2(vec.X  ,-vec.Y  )
+
+        static member angle (vec:Vector2) =
+            System.MathF.Atan2(vec.Y, vec.X) * 1f<rad>
+
+        static member fromAngle (angle: float32<rad>) =
+            Vector2.create (System.MathF.Cos(float32 angle)) (System.MathF.Sin(float32 angle))
 
     type System.Collections.Generic.Dictionary<'a,'b> with
         static member add key value (dic:Dictionary<'a,'b>) =

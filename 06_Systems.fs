@@ -22,15 +22,16 @@ module View =
         |]
         transformAndView |> Array.sortInPlaceBy (fun (t,v) -> v.Layer)
         for transform,view in transformAndView do
+            let rot = Vector2.angle transform.Direction
             if view.IsVisible then
                 sb.Draw(
                     texture         = view.Texture,
                     position        = transform.Position,
-                    scale           = view.Scale,
                     sourceRectangle = view.SrcRect,
                     color           = view.Tint,
-                    rotation        = view.Rotation,
+                    rotation        = float32 (view.Rotation + rot),
                     origin          = view.Origin,
+                    scale           = view.Scale * transform.Scale,
                     effects         = view.Effects,
                     layerDepth      = view.Layer
                 )

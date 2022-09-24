@@ -36,11 +36,13 @@ let initModel assets =
         e.addTransform (Transform.position (Vector2.create 100f 100f))
         e.addView     (
             View.fromTexture assets.Texture.Arrow FG1
+            |> View.setRotation (Radian.fromTurn 0.25f)
             |> View.withOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (sec 0.5) () (fun _ dt ->
-            e |> State.View.iter (fun view ->
-                View.setRotation (view.Rotation + Radian.fromDeg 45.0<deg>) view |> ignore
+            e |> State.Transform.iter (fun tf ->
+                let newD = Vector2.fromAngle ((Vector2.angle tf.Direction) + (Radian.fromTurn 0.125f))
+                Transform.setDirection newD tf |> ignore
             )
             State ()
         ))

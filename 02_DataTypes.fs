@@ -51,7 +51,7 @@ type View = {
     Layer:   float32
     mutable IsVisible: bool
     mutable Tint:      Color
-    mutable Rotation:  float<rad>
+    mutable Rotation:  float32<rad>
     mutable Scale:     Vector2
     mutable Effects:   SpriteEffects
 }

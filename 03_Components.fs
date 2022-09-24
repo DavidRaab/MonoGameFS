@@ -22,25 +22,22 @@ So there are three cases of functions
 *)
 
 module Radian =
-    let wrap (x:float) =
-        LanguagePrimitives.FloatWithMeasure<rad> x
-
-    let f32 (rad:float<rad>) =
-        float32 rad
+    let wrap (x:float32) =
+        LanguagePrimitives.Float32WithMeasure<rad> x
 
     /// A turn describes the angle of a circle between 0 and 1.
     /// So 0.25 or 1/4 is a 1/4 circle or 90 degrees. 0.5 is a half-circle and so on.
     let fromTurn x =
-        x * System.Math.Tau
-        * 1.0<rad>
+        x * System.MathF.Tau
+        * 1.0f<rad>
 
-    let fromDeg (degree:float<deg>) =
-        float degree * System.Math.PI / 180.0
-        * 1.0<rad>
+    let fromDeg (degree:float32<deg>) =
+        float32(float degree * System.Math.PI / 180.0)
+        * 1.0f<rad>
 
-    let toDeg (radiant:float<rad>) =
-        float radiant * 180.0 / System.Math.PI
-        * 1.0<rad>
+    let toDeg (radiant:float32<rad>) =
+        float32 (float radiant * 180.0 / System.Math.PI)
+        * 1.0f<rad>
 
 module Origin =
     let toVector width height origin =
@@ -81,7 +78,7 @@ module Transform =
         t
 
     let position pos =
-        create pos Vector2.down Vector2.One
+        create pos Vector2.right Vector2.One
 
     let positionDirection pos dir =
         create pos dir Vector2.One
@@ -107,7 +104,7 @@ module View =
         SrcRect   = Rectangle(0,0,sprite.Width,sprite.Height)
         IsVisible = true
         Tint      = Color.White
-        Rotation  = 0.0<rad>
+        Rotation  = 0.0f<rad>
         Origin    = Vector2.Zero
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
@@ -127,7 +124,7 @@ module View =
             )
         IsVisible = true
         Tint      = Color.White
-        Rotation  = 0.0<rad>
+        Rotation  = 0.0f<rad>
         Origin    = Vector2.Zero
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
