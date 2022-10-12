@@ -87,6 +87,21 @@ module Transform =
     let addPosition vec2 pos =
         pos.Position <- pos.Position + vec2
 
+module Sprite =
+    let create tex rect = {
+        Texture = tex
+        SrcRect = rect
+    }
+
+    let fromTexture tex = {
+        Texture = tex
+        SrcRect = Rectangle(0,0,tex.Width,tex.Height)
+    }
+
+    let rect    sprite = sprite.SrcRect
+    let texture sprite = sprite.Texture
+    let width   sprite = sprite.SrcRect.Width
+    let height  sprite = sprite.SrcRect.Height
 
 module View =
     let layerToFloat layer =
@@ -98,10 +113,9 @@ module View =
             | UI2 -> 0.5f
             | UI1 -> 0.6f
 
-    /// Generates a View from a whole Texture
-    let fromTexture sprite layer = {
-        Texture   = sprite
-        SrcRect   = Rectangle(0,0,sprite.Width,sprite.Height)
+    /// Generates a View
+    let fromSprite sprite layer = {
+        Sprite    = sprite
         IsVisible = true
         Tint      = Color.White
         Rotation  = 0.0f<rad>
@@ -113,14 +127,13 @@ module View =
 
     /// Generates a View from a Sheet by using the selected Sprite
     let fromSheet layer index sheet = {
-        Texture   = sheet.Texture
-        SrcRect   =
+        Sprite =
             Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
                 eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
                     index (sheet.Sprites.Length-1) (stackTrace 1)
                 if   sheet.Sprites.Length > 0
                 then Array.get sheet.Sprites 0
-                else Rectangle(0,0,64,64)
+                else failwith "Sheet has no Sprites"
             )
         IsVisible = true
         Tint      = Color.White
@@ -141,8 +154,8 @@ module View =
         view
 
     let withOrigin name (view:View) =
-        let width  = float32 view.SrcRect.Width
-        let height = float32 view.SrcRect.Height
+        let width  = float32 view.Sprite.SrcRect.Width
+        let height = float32 view.Sprite.SrcRect.Height
         let origin = Origin.toVector width height name
         { view with Origin = origin }
 
@@ -156,43 +169,55 @@ module View =
         view
 
 module Sheet =
+    /// Returns a sprite from a sheet
+    let sprite index sheet =
+        Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
+            eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
+                index (sheet.Sprites.Length-1) (stackTrace 1)
+            if   sheet.Sprites.Length > 0
+            then Array.get sheet.Sprites 0
+            else failwith "Sheet has 0 Sprites"
+        )
+
     let fromWidthHeight width height (texture:Texture2D) =
         let columns = texture.Width  / width
         let rows    = texture.Height / height
         let sprites = [|
             for row=0 to rows-1 do
             for col=0 to columns-1 do
-                yield Rectangle(col*width, row*height, width, height)
+                yield Sprite.create texture (Rectangle(col*width, row*height, width, height))
         |]
-        {Texture = texture; Sprites = sprites }
+        if sprites.Length = 0 then
+            failwith "Sheet with 0 Sprites"
+        { Sprites = sprites }
 
     let fromColumnsRows columns rows (texture:Texture2D) =
-        let width  = texture.Width  / columns
-        let height = texture.Height / rows
+        let width   = texture.Width  / columns
+        let height  = texture.Height / rows
         let sprites = [|
             for row=0 to rows-1 do
             for col=0 to columns-1 do
-                yield Rectangle(col*width, row*height, width, height)
+                yield Sprite.create texture (Rectangle(col*width, row*height, width, height))
         |]
-        {Texture = texture; Sprites = sprites }
+        if sprites.Length = 0 then
+            failwith "Sheet with 0 Sprites"
+        { Sprites = sprites }
 
-    let fromSheet idxs sheet =
-        let max = sheet.Sprites.Length
-        { sheet with
-            Sprites = [|
-                for idx in idxs do
-                    if idx < max then
-                        yield sheet.Sprites.[idx]
-                    else
-                        eprintfn "idx %d out of range. Max index is [%d] at\n%s"
-                            idx (sheet.Sprites.Length-1) (stackTrace 0)
-            |]
-        }
-
-    let fromTexture (texture:Texture2D) = {
-        Texture = texture;
-        Sprites = [| Rectangle(0,0,texture.Width,texture.Height) |]
+    /// Generates a new Sheet from an existing Sheet by selecting the sprites specified by `idxs`
+    let fromSheet idxs sheet = {
+        Sprites = [|
+            for idx in idxs do
+                yield sprite idx sheet
+        |]
     }
+
+    /// Generates a Sheet from a single texture that will contain a single sprite
+    let fromTexture (texture:Texture2D) = {
+        Sprites = [|
+            Sprite.create texture (Rectangle(0,0,texture.Width, texture.Height))
+        |]
+    }
+
 
 module SheetAnimation =
     let create (duration:int<ms>) isLoop sheet = {
@@ -213,7 +238,8 @@ module SheetAnimation =
         anim.CurrentSprite <- 0
         anim.ElapsedTime   <- TimeSpan.Zero
 
-    let getSourceRect anim =
+    /// Returns the current Sprite in an animation
+    let currentSprite anim =
         anim.Sheet.Sprites.[anim.CurrentSprite]
 
     let nextSprite anim =
@@ -224,10 +250,8 @@ module SheetAnimation =
             if anim.CurrentSprite < maxSprite-1 then
                 anim.CurrentSprite <- anim.CurrentSprite + 1
 
-    let changeView (anim:SheetAnimation) (view:View) =
-        { view with
-            Texture = anim.Sheet.Texture
-            SrcRect = getSourceRect anim }
+    let setCurrentSprite (anim:SheetAnimation) (view:View) =
+        { view with Sprite = currentSprite anim }
 
 module SheetAnimations =
     let create active animations =

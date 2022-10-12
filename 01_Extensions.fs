@@ -67,6 +67,13 @@ module Extensions =
     let inline notNearly target difference value =
         not (nearly target difference value)
 
+    module Rectangle =
+        let fromVectors (v1:Vector2) (v2:Vector2) =
+            Rectangle(
+                int (min v1.X v2.X),     int (min v1.Y v2.Y),
+                int (abs (v1.X - v2.X)), int (abs (v1.Y - v2.Y))
+            )
+
     module Texture2D =
         let create gd width height data =
             let tex = new Texture2D(gd, width, height)

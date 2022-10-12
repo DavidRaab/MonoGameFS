@@ -44,11 +44,15 @@ type Camera = {
     MaxZoom:      float
 }
 
-type View = {
+type Sprite = {
     Texture: Texture2D
     SrcRect: Rectangle
-    Origin:  Vector2
-    Layer:   float32
+}
+
+type View = {
+    Sprite: Sprite
+    Origin: Vector2
+    Layer:  float32
     mutable IsVisible: bool
     mutable Tint:      Color
     mutable Rotation:  float32<rad>
@@ -61,8 +65,7 @@ type Movement = {
 }
 
 type Sheet = {
-    Texture: Texture2D
-    Sprites: Rectangle array
+    Sprites: Sprite array
 }
 
 type SheetAnimation = {

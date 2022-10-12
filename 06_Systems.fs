@@ -25,9 +25,9 @@ module View =
             let rot = Vector2.angle transform.Direction
             if view.IsVisible then
                 sb.Draw(
-                    texture         = view.Texture,
+                    texture         = view.Sprite.Texture,
                     position        = transform.Position,
-                    sourceRectangle = view.SrcRect,
+                    sourceRectangle = view.Sprite.SrcRect,
                     color           = view.Tint,
                     rotation        = float32 (view.Rotation + rot),
                     origin          = view.Origin,
@@ -70,10 +70,10 @@ module SheetAnimations =
                 //   Theoretically only must execute when nextSprite was called
                 //   but then the first frame when setting a new animation is skipped.
                 //   Could be mutable or setting a new animation must be revisited.
-                State.View.map (SheetAnimation.changeView anim) entity
+                State.View.map (SheetAnimation.setCurrentSprite anim) entity
             )
 
-module Debug =
+module Drawing =
     let mousePosition (sb:SpriteBatch) (font:SpriteFont)  =
         let state = Input.Mouse.GetState()
         let world = Camera.screenToWorld (Vector2.create (float32 state.X) (float32 state.Y)) State.camera
@@ -112,24 +112,35 @@ module Debug =
     let line (texture:Texture2D) (thickness:int) color (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
         let hypotenuse = (stop - start)
         let length     = int (Vector2.length hypotenuse)
-        let angle      = atan2 hypotenuse.Y hypotenuse.X
+        let angle      = Vector2.angle hypotenuse
         sb.Draw(
             texture         = texture,
             position        = start,
             scale           = Vector2.One,
             sourceRectangle = Rectangle(0,0,length,thickness),
             color           = color,
-            rotation        = angle,
+            rotation        = float32 angle,
             origin          = Vector2(0f, float32 thickness / 2f),
             effects         = SpriteEffects.None,
             layerDepth      = 0f
         )
 
-    let rectangle (texture:Texture2D) (thickness:int) color (topLeft:Vector2) (bottomRight:Vector2) (sb:SpriteBatch) =
+    let rectangle (sprite:Sprite) (thickness:int) color (topLeft:Vector2) (bottomRight:Vector2) (sb:SpriteBatch) =
         let offset     = Vector2(float32 (thickness / 2), 0f)
         let topRight   = Vector2(bottomRight.X, topLeft.Y)
         let bottomLeft = Vector2(topLeft.X, bottomRight.Y)
-        let drawLine   = line texture thickness color
+        let rect       = Rectangle.fromVectors topLeft bottomRight
+        sb.Draw(
+            texture              = sprite.Texture,
+            destinationRectangle = rect,
+            sourceRectangle      = sprite.SrcRect,
+            color                = color * 0.1f,
+            rotation             = 0f,
+            origin               = Vector2.Zero,
+            effects              = SpriteEffects.None,
+            layerDepth           = 0f
+        )
+        let drawLine = line sprite.Texture thickness color
         sb |> drawLine (topLeft - offset)     (topRight + offset)
         sb |> drawLine  topRight               bottomRight
         sb |> drawLine (bottomRight + offset) (bottomLeft - offset)

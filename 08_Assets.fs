@@ -7,14 +7,14 @@ open Microsoft.Xna.Framework.Graphics
 
 type Assets = {
     Font:    Fonts
-    Texture: Textures
+    Sprites: Sprites
     Knight:  SheetAnimations
 }
-and Textures = {
-    Missing:  Texture2D
-    Arrow:    Texture2D
-    Pixel:    Texture2D
-    WhiteBox: Texture2D
+and Sprites = {
+    Pixel:    Sprite
+    Missing:  Sprite
+    Arrow:    Sprite
+    WhiteBox: Sprite
 }
 and Fonts = {
     Default: SpriteFont
@@ -25,11 +25,11 @@ module Assets =
         Font = {
             Default = loadFont "Font"
         }
-        Texture = {
-            Missing  = texture 1  1 [|Color.Pink|]
-            Arrow    = load "arrow"
-            WhiteBox = texture 10 10 (Array.replicate 100 Color.White)
-            Pixel    = texture 1  1 [|Color.White|]
+        Sprites = {
+            Pixel    = Sprite.fromTexture (texture 1  1 [|Color.White|])
+            Missing  = Sprite.fromTexture (texture 1  1 [|Color.Pink|])
+            Arrow    = Sprite.fromTexture (load "arrow")
+            WhiteBox = Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.White))
         }
         Knight = SheetAnimations.create "Idle" [
             "Idle",   SheetAnimation.create 100<ms> true  (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Idle"))

@@ -29,13 +29,13 @@ type Model = {
 let initModel assets =
     let box = Entity.init (fun e ->
         e.addTransform (Transform.position (Vector2.create 0f 0f))
-        e.addView     (View.fromTexture assets.Texture.WhiteBox FG1)
+        e.addView      (View.fromSprite assets.Sprites.WhiteBox FG1)
     )
 
     let arrow = Entity.init (fun e ->
         e.addTransform (Transform.position (Vector2.create 100f 100f))
-        e.addView     (
-            View.fromTexture assets.Texture.Arrow FG1
+        e.addView      (
+            View.fromSprite assets.Sprites.Arrow FG1
             |> View.setRotation (Radian.fromTurn 0.25f)
             |> View.withOrigin Center
         )
@@ -64,7 +64,7 @@ let initModel assets =
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
                 box.addTransform (Transform.position (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)))
-                box.addView     (View.fromTexture assets.Texture.WhiteBox BG1)
+                box.addView      (View.fromSprite assets.Sprites.WhiteBox BG1)
             ))
 
     Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
@@ -333,7 +333,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     let onCamera = doSpriteBatch game.SpriteBatch
 
     let drawRect =
-        Systems.Debug.rectangle game.Asset.Texture.Pixel 2 Color.MidnightBlue
+        Systems.Drawing.rectangle game.Asset.Sprites.Pixel 2 Color.MidnightBlue
 
     onCamera State.camera (fun sb ->
         Systems.View.draw sb
@@ -350,8 +350,8 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
 
     onCamera State.cameraScreen (fun sb ->
         FPS.draw game.Asset.Font.Default sb
-        Systems.Debug.mousePosition sb game.Asset.Font.Default
-        Systems.Debug.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
+        Systems.Drawing.mousePosition sb game.Asset.Font.Default
+        Systems.Drawing.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
     )
 
 // Initialization of the Game
