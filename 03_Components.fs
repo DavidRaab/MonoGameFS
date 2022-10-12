@@ -242,6 +242,7 @@ module SheetAnimation =
     let currentSprite anim =
         anim.Sheet.Sprites.[anim.CurrentSprite]
 
+    /// Advance the animation to the next Sprite
     let nextSprite anim =
         let maxSprite = anim.Sheet.Sprites.Length
         if anim.IsLoop then
@@ -250,6 +251,7 @@ module SheetAnimation =
             if anim.CurrentSprite < maxSprite-1 then
                 anim.CurrentSprite <- anim.CurrentSprite + 1
 
+    /// Returns a new View with the current Sprite of an SheetAnimation
     let setCurrentSprite (anim:SheetAnimation) (view:View) =
         { view with Sprite = currentSprite anim }
 

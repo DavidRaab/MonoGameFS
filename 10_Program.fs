@@ -326,8 +326,8 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear(Color.CornflowerBlue)
 
-    let doSpriteBatch (sb:SpriteBatch) (camera:Camera) f =
-        sb.Begin(transformMatrix = Camera.matrix camera)
+    let doSpriteBatch (sb:SpriteBatch) (camera:Camera) samplerState f =
+        sb.Begin(transformMatrix = Camera.matrix camera, samplerState = samplerState)
         f sb
         sb.End()
     let onCamera = doSpriteBatch game.SpriteBatch
@@ -335,7 +335,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     let drawRect =
         Systems.Drawing.rectangle game.Asset.Sprites.Pixel 2 Color.MidnightBlue
 
-    onCamera State.camera (fun sb ->
+    onCamera State.camera SamplerState.PointWrap (fun sb ->
         Systems.View.draw sb
 
         match model.MouseRectangle with
@@ -348,7 +348,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
             drawRect start stop sb
     )
 
-    onCamera State.cameraScreen (fun sb ->
+    onCamera State.uiCamera SamplerState.LinearClamp (fun sb ->
         FPS.draw game.Asset.Font.Default sb
         Systems.Drawing.mousePosition sb game.Asset.Font.Default
         Systems.Drawing.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
@@ -364,8 +364,8 @@ let init (game:MyGame) =
     game.IsMouseVisible        <- true
     game.SetResolution width height
     Input.Mouse.SetCursor(Input.MouseCursor.Crosshair)
-    State.camera       <- Camera.create width height |> Camera.withMinMaxZoom 0.03 3
-    State.cameraScreen <- Camera.create width height
+    State.camera   <- Camera.create width height |> Camera.withMinMaxZoom 0.03 3
+    State.uiCamera <- Camera.create width height
 
 // Loading Assets
 let loadAssets (game:MyGame) =
