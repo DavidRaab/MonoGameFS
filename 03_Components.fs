@@ -56,15 +56,29 @@ module Origin =
         Vector2(x,y)
 
 module Transform =
-    let create pos dir scale : Transform = {
+    // Constructors
+    let create parent pos dir scale : Transform = {
+        Parent    = parent
         Position  = pos
         Direction = dir
         Scale     = scale
     }
 
     let empty =
-        create Vector2.Zero Vector2.Zero Vector2.One
+        create ValueNone Vector2.Zero Vector2.Zero Vector2.One
 
+    let createPosition pos : Transform =
+        create ValueNone pos Vector2.right Vector2.One
+
+    let createPositionDirection pos dir : Transform =
+        create ValueNone pos dir Vector2.One
+
+    // Immutable Properties
+    /// Creates a new Transform with the provided Parent Transform.
+    let withParent parent (t:Transform) =
+        { t with Parent = parent }
+
+    // Mutable Properties
     let setPosition newPos (t:Transform) =
         t.Position <- newPos
         t
@@ -77,15 +91,10 @@ module Transform =
         t.Scale <- newScale
         t
 
-    let position pos =
-        create pos Vector2.right Vector2.One
-
-    let positionDirection pos dir =
-        create pos dir Vector2.One
-
     /// Adds a vector to the Position
     let addPosition vec2 pos =
         pos.Position <- pos.Position + vec2
+
 
 module Sprite =
     let create tex rect = {
@@ -104,6 +113,9 @@ module Sprite =
     let height  sprite = sprite.SrcRect.Height
 
 module View =
+    // Turns a Layer into a number. When Drawing the sprites all sprites
+    // are sorted by this number. This way we can emulate layers. On the same
+    // layer no drawing order can be preserved.
     let layerToFloat layer =
         match layer with
             | BG2 -> 0.1f
@@ -112,6 +124,8 @@ module View =
             | FG1 -> 0.4f
             | UI2 -> 0.5f
             | UI1 -> 0.6f
+
+    // Constructors
 
     /// Generates a View
     let fromSprite sprite layer = {
@@ -144,7 +158,15 @@ module View =
         Layer     = layerToFloat layer
     }
 
-    /// Mutates the `Scale` of the View and returns the `View` again
+    // Immutable Properties
+    let withOrigin name (view:View) =
+        let width  = float32 view.Sprite.SrcRect.Width
+        let height = float32 view.Sprite.SrcRect.Height
+        let origin = Origin.toVector width height name
+        { view with Origin = origin }
+
+    // Mutable Properties
+
     let setScale scale (view:View) =
         view.Scale <- scale
         view
@@ -153,11 +175,9 @@ module View =
         view.Rotation <- rot
         view
 
-    let withOrigin name (view:View) =
-        let width  = float32 view.Sprite.SrcRect.Width
-        let height = float32 view.Sprite.SrcRect.Height
-        let origin = Origin.toVector width height name
-        { view with Origin = origin }
+    let setTint tint (view:View) =
+        view.Tint <- tint
+        view
 
     let flipHorizontal b view =
         match b with

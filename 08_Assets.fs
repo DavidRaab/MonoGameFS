@@ -26,8 +26,8 @@ module Assets =
             Default = loadFont "Font"
         }
         Sprites = {
-            Pixel    = Sprite.fromTexture (texture 1  1 [|Color.White|])
-            Missing  = Sprite.fromTexture (texture 1  1 [|Color.Pink|])
+            Pixel    = Sprite.fromTexture (texture  1  1 [|Color.White|])
+            Missing  = Sprite.fromTexture (texture  1  1 [|Color.Pink|])
             Arrow    = Sprite.fromTexture (load "arrow")
             WhiteBox = Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.White))
         }

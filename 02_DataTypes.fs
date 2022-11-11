@@ -9,6 +9,7 @@ type Entity =
     Entity of int
 
 type Transform = {
+    Parent: Entity voption
     mutable Position:  Vector2
     mutable Direction: Vector2
     mutable Scale:     Vector2

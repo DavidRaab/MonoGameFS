@@ -27,13 +27,8 @@ type Model = {
 
 // Initialize the Game Model
 let initModel assets =
-    let box = Entity.init (fun e ->
-        e.addTransform (Transform.position (Vector2.create 0f 0f))
-        e.addView      (View.fromSprite assets.Sprites.WhiteBox FG1)
-    )
-
     let arrow = Entity.init (fun e ->
-        e.addTransform (Transform.position (Vector2.create 100f 100f))
+        e.addTransform (Transform.createPosition (Vector2.create 100f 100f))
         e.addView      (
             View.fromSprite assets.Sprites.Arrow FG1
             |> View.setRotation (Radian.fromTurn 0.25f)
@@ -49,8 +44,8 @@ let initModel assets =
     )
 
     let knight = Entity.init (fun e ->
-        e.addTransform (Transform.position (Vector2.create 427f 0f))
-        e.addView     (
+        e.addTransform (Transform.createPosition (Vector2.create 427f 0f))
+        e.addView (
             SheetAnimations.toView FG1 assets.Knight
             |> View.setScale (Vector2.create 3f 3f)
             |> View.withOrigin Top
@@ -58,12 +53,44 @@ let initModel assets =
         e.addSheetAnimations (assets.Knight)
     )
 
+    // Creates a box that is a parent of the knight and moves when Knight moves
+    let box = Entity.init (fun e ->
+        e.addTransform (
+            Transform.createPosition (Vector2.create 0f 80f)
+            |> Transform.withParent (ValueSome knight)
+        )
+        e.addView (
+            View.fromSprite assets.Sprites.WhiteBox FG1
+            |> View.setTint Color.Aqua
+            |> View.withOrigin Top
+        )
+    )
+
+    // Makes the box over the knight move from left/right like KnightRider!
+    Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
+        match state with
+        | Choice1Of2 state ->
+            box |> State.Transform.iter (fun t ->
+                Transform.addPosition (Vector2.create 10f 0f) t
+            )
+            if state < 4
+            then State (Choice1Of2 (state+1))
+            else State (Choice2Of2 (state+1))
+        | Choice2Of2 state ->
+            box |> State.Transform.iter (fun t ->
+                Transform.addPosition (Vector2.create -10f 0f) t
+            )
+            if state > -4
+            then State (Choice2Of2 (state-1))
+            else State (Choice1Of2 (state-1))
+    ))
+
     let boxes = ResizeArray<_>()
     let yOffset = 50f
     for x=1 to 75 do
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
-                box.addTransform (Transform.position (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)))
+                box.addTransform (Transform.createPosition (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)))
                 box.addView      (View.fromSprite assets.Sprites.WhiteBox BG1)
             ))
 

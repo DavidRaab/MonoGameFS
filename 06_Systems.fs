@@ -13,6 +13,14 @@ type TimeSpan = System.TimeSpan
 
 // View System draws entity
 module View =
+    let rec transformPosition (t:Transform) =
+        match t.Parent with
+        | ValueNone        -> ValueSome t.Position
+        | ValueSome parent ->
+            match State.Transform.get parent with
+            | ValueNone   -> ValueNone
+            | ValueSome p -> (transformPosition p) |> ValueOption.map (fun p -> p + t.Position)
+
     let draw (sb:SpriteBatch) =
         let transformAndView = [|
             for entity in Entity.transformAndView.GetCache() do
@@ -24,17 +32,20 @@ module View =
         for transform,view in transformAndView do
             let rot = Vector2.angle transform.Direction
             if view.IsVisible then
-                sb.Draw(
-                    texture         = view.Sprite.Texture,
-                    position        = transform.Position,
-                    sourceRectangle = view.Sprite.SrcRect,
-                    color           = view.Tint,
-                    rotation        = float32 (view.Rotation + rot),
-                    origin          = view.Origin,
-                    scale           = view.Scale * transform.Scale,
-                    effects         = view.Effects,
-                    layerDepth      = view.Layer
-                )
+                match transformPosition transform with
+                | ValueNone     -> ()
+                | ValueSome pos ->
+                    sb.Draw(
+                        texture         = view.Sprite.Texture,
+                        position        = pos,
+                        sourceRectangle = view.Sprite.SrcRect,
+                        color           = view.Tint,
+                        rotation        = float32 (view.Rotation + rot),
+                        origin          = view.Origin,
+                        scale           = view.Scale * transform.Scale,
+                        effects         = view.Effects,
+                        layerDepth      = view.Layer
+                    )
 
 // Moves those who should be moved
 module Movement =
