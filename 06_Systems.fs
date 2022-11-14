@@ -13,13 +13,23 @@ type TimeSpan = System.TimeSpan
 
 // View System draws entity
 module View =
-    let rec transformPosition (t:Transform) =
-        match t.Parent with
-        | ValueNone        -> ValueSome t.Position
+    // Calculates position and rotation relative to parent
+    let rec transformPosition (me:Transform) =
+        match me.Parent with
+        | ValueNone        -> ValueSome (me.Position,0f<rad>)
         | ValueSome parent ->
             match State.Transform.get parent with
-            | ValueNone   -> ValueNone
-            | ValueSome p -> (transformPosition p) |> ValueOption.map (fun p -> p + t.Position)
+            | ValueNone        -> ValueNone
+            | ValueSome parent ->
+                (transformPosition parent) |> ValueOption.map (fun (pPos,pRot) ->
+                    let rot = pRot + Vector2.angle parent.Direction
+                    let pos = Vector2.Transform(
+                        me.Position,
+                        Matrix.CreateRotationZ(rot |> float32)
+                        * Matrix.CreateTranslation(Vector3(pPos,0f))
+                    )
+                    pos,rot
+                )
 
     let draw (sb:SpriteBatch) =
         let transformAndView = [|
@@ -30,17 +40,17 @@ module View =
         |]
         transformAndView |> Array.sortInPlaceBy (fun (t,v) -> v.Layer)
         for transform,view in transformAndView do
-            let rot = Vector2.angle transform.Direction
             if view.IsVisible then
                 match transformPosition transform with
-                | ValueNone     -> ()
-                | ValueSome pos ->
+                | ValueNone                     -> ()
+                | ValueSome (position,pRot) ->
+                    let rotation = Vector2.angle transform.Direction
                     sb.Draw(
                         texture         = view.Sprite.Texture,
-                        position        = pos,
+                        position        = position,
                         sourceRectangle = view.Sprite.SrcRect,
                         color           = view.Tint,
-                        rotation        = float32 (view.Rotation + rot),
+                        rotation        = float32 (pRot + rotation + view.Rotation),
                         origin          = view.Origin,
                         scale           = view.Scale * transform.Scale,
                         effects         = view.Effects,

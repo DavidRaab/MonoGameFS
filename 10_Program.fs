@@ -28,8 +28,8 @@ type Model = {
 // Initialize the Game Model
 let initModel assets =
     let arrow = Entity.init (fun e ->
-        e.addTransform (Transform.createPosition (Vector2.create 100f 100f))
-        e.addView      (
+        e.addTransform (Transform.fromPosition 100f 100f)
+        e.addView (
             View.fromSprite assets.Sprites.Arrow FG1
             |> View.setRotation (Radian.fromTurn 0.25f)
             |> View.withOrigin Center
@@ -44,7 +44,7 @@ let initModel assets =
     )
 
     let knight = Entity.init (fun e ->
-        e.addTransform (Transform.createPosition (Vector2.create 427f 0f))
+        e.addTransform (Transform.fromPosition 427f 200f)
         e.addView (
             SheetAnimations.toView FG1 assets.Knight
             |> View.setScale (Vector2.create 3f 3f)
@@ -56,15 +56,68 @@ let initModel assets =
     // Creates a box that is a parent of the knight and moves when Knight moves
     let box = Entity.init (fun e ->
         e.addTransform (
-            Transform.createPosition (Vector2.create 0f 80f)
+            Transform.fromPosition 0f 80f
             |> Transform.withParent (ValueSome knight)
         )
         e.addView (
             View.fromSprite assets.Sprites.WhiteBox FG1
             |> View.setTint Color.Aqua
-            |> View.withOrigin Top
+            |> View.withOrigin Center
         )
     )
+
+    let sun = Entity.init (fun e ->
+        e.addTransform (Transform.fromPosition 200f 200f)
+        e.addView (
+            View.fromSprite assets.Sprites.WhiteBox FG1
+            |> View.setTint Color.Yellow
+            |> View.withOrigin Center
+        )
+    )
+
+    let planet1 = Entity.init (fun e ->
+        e.addTransform(
+            Transform.fromPosition 0f -100f
+            |> Transform.withParent (ValueSome sun)
+        )
+        e.addView (
+            View.fromSprite assets.Sprites.WhiteBox FG1
+            |> View.setTint Color.BlueViolet
+            |> View.withOrigin Center
+        )
+    )
+
+    let planet2 = Entity.init (fun e ->
+        e.addTransform(
+            Transform.fromPosition 0f -50f
+            |> Transform.withParent (ValueSome planet1)
+        )
+        e.addView (
+            View.fromSprite assets.Sprites.WhiteBox FG1
+            |> View.setTint Color.DarkViolet
+            |> View.withOrigin Center
+        )
+    )
+
+    let planet3 = Entity.init (fun e ->
+        e.addTransform(
+            Transform.fromPosition 0f -20f
+            |> Transform.withParent (ValueSome planet2)
+        )
+        e.addView (
+            View.fromSprite assets.Sprites.WhiteBox FG1
+            |> View.setTint Color.Brown
+            |> View.withOrigin Center
+        )
+    )
+
+    // Let stars rotate
+    Systems.Timer.addTimer (Timer.every (sec 0.03333) 0f<rad> (fun state dt ->
+        let rotate t =
+            Transform.setDirection (Vector2.fromAngle state) t |> ignore
+        List.iter (fun e -> State.Transform.iter rotate e) [sun;planet1;planet2;planet3]
+        State (state + Radian.fromDeg 1f<deg>)
+    ))
 
     // Makes the box over the knight move from left/right like KnightRider!
     Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
@@ -90,7 +143,7 @@ let initModel assets =
     for x=1 to 75 do
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
-                box.addTransform (Transform.createPosition (Vector2.create (float32 x * 11f) (float32 y * 11f + yOffset)))
+                box.addTransform (Transform.fromPosition (float32 x * 11f) (float32 y * 11f + yOffset))
                 box.addView      (View.fromSprite assets.Sprites.WhiteBox BG1)
             ))
 

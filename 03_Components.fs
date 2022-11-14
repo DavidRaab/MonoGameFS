@@ -67,8 +67,11 @@ module Transform =
     let empty =
         create ValueNone Vector2.Zero Vector2.Zero Vector2.One
 
-    let createPosition pos : Transform =
+    let fromVector pos : Transform =
         create ValueNone pos Vector2.right Vector2.One
+
+    let fromPosition x y : Transform =
+        fromVector (Vector2.create x y)
 
     let createPositionDirection pos dir : Transform =
         create ValueNone pos dir Vector2.One
