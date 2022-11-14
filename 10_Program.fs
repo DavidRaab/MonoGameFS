@@ -115,11 +115,11 @@ let initModel assets =
     Systems.Timer.addTimer (Timer.every (sec 0.03333) 0f<rad> (fun state dt ->
         let rotate t =
             Transform.setDirection (Vector2.fromAngle state) t |> ignore
-        List.iter (fun e -> State.Transform.iter rotate e) [sun;planet1;planet2;planet3]
+        List.iter (State.Transform.iter rotate) [sun;planet1;planet2;planet3]
         State (state + Radian.fromDeg 1f<deg>)
     ))
 
-    // Makes the box over the knight move from left/right like KnightRider!
+    // Makes the box over the knight move from left/right like Knight Rider!
     Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
         match state with
         | Choice1Of2 state ->
@@ -147,13 +147,15 @@ let initModel assets =
                 box.addView      (View.fromSprite assets.Sprites.WhiteBox BG1)
             ))
 
+    // Make the 3000 boxes move
     Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
         let vec = if state then Vector2.right * 10f else Vector2.left * 10f
         for box in boxes do
-            State.Transform.map (fun pos -> {pos with Position = pos.Position + vec}) box
+            State.Transform.iter (Transform.addPosition vec) box
         State (not state)
     ))
 
+    // Periodically run Garbage Collector
     Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun _ _ ->
         System.GC.Collect ()
         State ()

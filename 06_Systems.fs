@@ -13,22 +13,24 @@ type TimeSpan = System.TimeSpan
 
 // View System draws entity
 module View =
-    // Calculates position and rotation relative to parent
-    let rec transformPosition (me:Transform) =
+    // Calculates position, rotation and scale relative to parent
+    let rec calculateTransform (me:Transform) =
         match me.Parent with
-        | ValueNone        -> ValueSome (me.Position,0f<rad>)
+        | ValueNone        -> ValueSome (me.Position,Vector2.angle me.Direction,me.Scale)
         | ValueSome parent ->
             match State.Transform.get parent with
             | ValueNone        -> ValueNone
             | ValueSome parent ->
-                (transformPosition parent) |> ValueOption.map (fun (pPos,pRot) ->
-                    let rot = pRot + Vector2.angle parent.Direction
-                    let pos = Vector2.Transform(
+                (calculateTransform parent) |> ValueOption.map (fun (pPos,pRot,pScale) ->
+                    let rot   = pRot + Vector2.angle me.Direction
+                    let scale = Vector2.create (pScale.X * me.Scale.X) (pScale.Y * me.Scale.Y)
+                    let pos   = Vector2.Transform(
                         me.Position,
-                        Matrix.CreateRotationZ(rot |> float32)
+                        Matrix.CreateScale(scale.X, scale.Y, 0f)
+                        * Matrix.CreateRotationZ(float32 rot)
                         * Matrix.CreateTranslation(Vector3(pPos,0f))
                     )
-                    pos,rot
+                    pos,rot,scale
                 )
 
     let draw (sb:SpriteBatch) =
@@ -41,18 +43,17 @@ module View =
         transformAndView |> Array.sortInPlaceBy (fun (t,v) -> v.Layer)
         for transform,view in transformAndView do
             if view.IsVisible then
-                match transformPosition transform with
-                | ValueNone                     -> ()
-                | ValueSome (position,pRot) ->
-                    let rotation = Vector2.angle transform.Direction
+                match calculateTransform transform with
+                | ValueNone                           -> ()
+                | ValueSome (position,rotation,scale) ->
                     sb.Draw(
                         texture         = view.Sprite.Texture,
                         position        = position,
                         sourceRectangle = view.Sprite.SrcRect,
                         color           = view.Tint,
-                        rotation        = float32 (pRot + rotation + view.Rotation),
+                        rotation        = float32 (rotation + view.Rotation),
                         origin          = view.Origin,
-                        scale           = view.Scale * transform.Scale,
+                        scale           = view.Scale * scale,
                         effects         = view.Effects,
                         layerDepth      = view.Layer
                     )
