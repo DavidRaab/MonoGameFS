@@ -329,11 +329,13 @@ module Movement =
         create (Vector2(x,y))
 
 module Camera =
-    let create width height = {
+    let create (w,h) (vw,vh) = {
         Camera.CameraPosition = Vector2.create 0f 0f
         Zoom                  = 1.0
-        Width                 = width
-        Height                = height
+        VirtualWidth          = w
+        VirtualHeight         = h
+        ViewportWidth         = vw
+        ViewportHeight        = vh
         Origin                = Center
         MinZoom               = 0.03
         MaxZoom               = 2.0
@@ -341,6 +343,13 @@ module Camera =
 
     let withMinMaxZoom min max camera =
         { camera with MinZoom = min; MaxZoom = max }
+
+    let withViewport (width,height) camera =
+        { camera with ViewportWidth = width; ViewportHeight = height }
+
+    let virtualScale camera =
+        let scale = float32 camera.ViewportWidth / float32 camera.VirtualWidth
+        Vector3(scale,scale,1f)
 
     let setPosition vec camera =
         camera.CameraPosition <- vec
@@ -360,11 +369,12 @@ module Camera =
         camera.CameraPosition <- camera.CameraPosition + vec
 
     let matrix camera =
-        let origin = Origin.toVector (float32 camera.Width) (float32 camera.Height) camera.Origin
-        Matrix.CreateTranslation  (Vector3(-camera.CameraPosition , 0f))
-        * Matrix.CreateTranslation(Vector3(-origin, 0f))
-        * Matrix.CreateScale      (float32 camera.Zoom, float32 camera.Zoom, 1f)
-        * Matrix.CreateTranslation(Vector3(origin, 0f))
+        let origin = Origin.toVector (float32 camera.VirtualWidth) (float32 camera.VirtualHeight) camera.Origin
+        Matrix.CreateScale          (virtualScale camera)
+        * Matrix.CreateTranslation  (Vector3(-camera.CameraPosition , 0f))
+        * Matrix.CreateTranslation  (Vector3(-origin, 0f))
+        * Matrix.CreateScale        (float32 camera.Zoom, float32 camera.Zoom, 1f)
+        * Matrix.CreateTranslation  (Vector3(origin, 0f))
 
     let screenToWorld position camera =
         Vector2.Transform(position, Matrix.Invert (matrix camera))

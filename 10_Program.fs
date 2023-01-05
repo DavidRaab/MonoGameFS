@@ -438,25 +438,38 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
 
 // Initialization of the Game
 let init (game:MyGame) =
+    // The virtual width/height is the internal resolution the game renders its image
+    // The window width/height is the actual size of the window
+    let virtualWidth, virtualHeight = game.RenderTarget.Width, game.RenderTarget.Height
+    let windowWidth,  windowHeight  = 1200, 480
+
     game.Graphics.SynchronizeWithVerticalRetrace <- false
     game.IsFixedTimeStep          <- false
     game.TargetElapsedTime        <- sec (1.0 / 60.0)
     game.Content.RootDirectory    <- "Content"
     game.IsMouseVisible           <- true
     game.Window.AllowUserResizing <- true
+    game.SetResolution windowWidth windowHeight
+
+    Input.Mouse.SetCursor Input.MouseCursor.Crosshair
+
+    game.CalculateViewport ()
+    let viewport = game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height
+    State.camera   <- Camera.create (virtualWidth,virtualHeight) viewport |> Camera.withMinMaxZoom 0.03 3
+    State.uiCamera <- Camera.create (virtualWidth,virtualHeight) viewport
+
+    // Event when user resize window
     game.Window.ClientSizeChanged |> Event.add (fun args ->
         let g, w = game.Graphics, game.Window
         g.PreferredBackBufferWidth  <- w.ClientBounds.Width
         g.PreferredBackBufferHeight <- w.ClientBounds.Height
         g.ApplyChanges()
         game.CalculateViewport ()
-    )
-    game.SetResolution 1200 480
 
-    let width, height = game.RenderTarget.Width, game.RenderTarget.Height
-    Input.Mouse.SetCursor Input.MouseCursor.Crosshair
-    State.camera   <- Camera.create width height |> Camera.withMinMaxZoom 0.03 3
-    State.uiCamera <- Camera.create width height
+        let viewport = game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height
+        State.camera   <- Camera.withViewport viewport State.camera
+        State.uiCamera <- Camera.withViewport viewport State.uiCamera
+    )
 
 // Loading Assets
 let loadAssets (game:MyGame) =

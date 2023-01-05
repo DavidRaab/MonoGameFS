@@ -37,12 +37,14 @@ type ViewLayer =
 
 type Camera = {
     mutable CameraPosition: Vector2
-    mutable Zoom: float
-    Width:        int
-    Height:       int
-    Origin:       Origin
-    MinZoom:      float
-    MaxZoom:      float
+    mutable Zoom:   float
+    VirtualWidth:   int
+    VirtualHeight:  int
+    ViewportWidth:  int
+    ViewportHeight: int
+    Origin:         Origin
+    MinZoom:        float
+    MaxZoom:        float
 }
 
 type Sprite = {
