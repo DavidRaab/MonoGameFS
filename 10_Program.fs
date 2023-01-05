@@ -406,7 +406,7 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     model
 
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
-    game.GraphicsDevice.Clear(Color.CornflowerBlue)
+    game.GraphicsDevice.Clear Color.CornflowerBlue
 
     let doSpriteBatch (sb:SpriteBatch) (camera:Camera) samplerState f =
         sb.Begin(transformMatrix = Camera.matrix camera, samplerState = samplerState)
@@ -438,14 +438,23 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
 
 // Initialization of the Game
 let init (game:MyGame) =
-    let width, height = 854, 480
     game.Graphics.SynchronizeWithVerticalRetrace <- false
-    game.IsFixedTimeStep       <- false
-    game.TargetElapsedTime     <- sec (1.0 / 60.0)
-    game.Content.RootDirectory <- "Content"
-    game.IsMouseVisible        <- true
-    game.SetResolution width height
-    Input.Mouse.SetCursor(Input.MouseCursor.Crosshair)
+    game.IsFixedTimeStep          <- false
+    game.TargetElapsedTime        <- sec (1.0 / 60.0)
+    game.Content.RootDirectory    <- "Content"
+    game.IsMouseVisible           <- true
+    game.Window.AllowUserResizing <- true
+    game.Window.ClientSizeChanged |> Event.add (fun args ->
+        let g, w = game.Graphics, game.Window
+        g.PreferredBackBufferWidth  <- w.ClientBounds.Width
+        g.PreferredBackBufferHeight <- w.ClientBounds.Height
+        g.ApplyChanges()
+        game.CalculateViewport ()
+    )
+    game.SetResolution 1200 480
+
+    let width, height = game.RenderTarget.Width, game.RenderTarget.Height
+    Input.Mouse.SetCursor Input.MouseCursor.Crosshair
     State.camera   <- Camera.create width height |> Camera.withMinMaxZoom 0.03 3
     State.uiCamera <- Camera.create width height
 
@@ -460,7 +469,11 @@ let loadAssets (game:MyGame) =
 // Run MonoGame Application
 [<EntryPoint;System.STAThread>]
 let main argv =
-    using (new MonoGame<Assets,Model>(init, loadAssets, initModel, update, draw)) (fun game ->
+    let renderTarget = {
+        Width  = 640
+        Height = 360
+    }
+    using (new MonoGame<Assets,Model>(init, loadAssets, initModel, update, draw, renderTarget)) (fun game ->
         game.Run()
     )
     1
