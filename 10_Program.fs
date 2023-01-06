@@ -201,6 +201,7 @@ type Action =
 let mutable knightState = IsIdle
 
 // A Fixed Update implementation that tuns at the specified fixedUpdateTiming
+let mutable resetInput = false
 let fixedUpdateTiming = sec (1.0 / 60.0)
 let fixedUpdate model (deltaTime:TimeSpan) =
     let fDeltaTime = float32 deltaTime.TotalSeconds
@@ -349,10 +350,13 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         | Camera v                   -> Camera.add           (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
         | _                          -> ()
 
-    // Resets the Keyboard State
-    FKeyboard.nextState ()
-    FGamePad.nextState  ()
-    FMouse.nextState    ()
+    // Whenever one fixedUpdate runs the Input states should be resetted
+    // But the current input information should also be avaiable in draw
+    // when needed. So we just set the flag and reset the input after
+    // we have drawn everything
+    resetInput <- true
+
+    // The next model
     model
 
 // Type Alias for my game
@@ -441,6 +445,11 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
         Systems.Drawing.mousePosition sb game.Asset.Font.Default (FMouse.position ()) (Vector2.create 3f 340f)
         Systems.Drawing.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
     )
+
+    if resetInput then
+        FKeyboard.nextState ()
+        FGamePad.nextState  ()
+        FMouse.nextState    ()
 
 // Initialization of the Game
 let init (game:MyGame) =
