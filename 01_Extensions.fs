@@ -14,6 +14,9 @@ module Extensions =
     [<Measure>] type rad
     [<Measure>] type deg
 
+    // Perl like op used in defining hashes/Map
+    let (=>) x y = x,y
+
     // Partial Active Patterns
     let (|IsGreater|_|) target input = if input > target then Some input else None
     let (|IsSmaller|_|) target input = if input < target then Some input else None
