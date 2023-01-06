@@ -41,8 +41,7 @@ type Camera = {
     mutable Matrix:   Matrix option // This field is used for caching the matrix
     VirtualWidth:     int
     VirtualHeight:    int
-    ViewportWidth:    int
-    ViewportHeight:   int
+    Viewport:         Viewport
     Origin:           Origin
     MinZoom:          float
     MaxZoom:          float

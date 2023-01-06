@@ -330,7 +330,7 @@ module Movement =
 
 module Camera =
     let virtualScale camera =
-        let scale = float32 camera.ViewportWidth / float32 camera.VirtualWidth
+        let scale = float32 camera.Viewport.Width / float32 camera.VirtualWidth
         Vector3(scale,scale,1f)
 
     /// Calculates and returns the Matrix of the Camera. This ignores the Matrix field of
@@ -344,14 +344,13 @@ module Camera =
         * Matrix.CreateScale       (float32 camera.Zoom, float32 camera.Zoom, 1f)
         * Matrix.CreateTranslation (Vector3(origin, 0f))
 
-    let create (w,h) (vw,vh) = {
+    let create (w,h) viewport = {
         Camera.Position = Vector2.create 0f 0f
         Zoom            = 1.0
         Matrix          = None
         VirtualWidth    = w
         VirtualHeight   = h
-        ViewportWidth   = vw
-        ViewportHeight  = vh
+        Viewport        = viewport
         Origin          = Center
         MinZoom         = 0.03
         MaxZoom         = 2.0
@@ -360,8 +359,8 @@ module Camera =
     let withMinMaxZoom min max camera =
         { camera with MinZoom = min; MaxZoom = max; Matrix = None }
 
-    let withViewport (width,height) camera =
-        { camera with ViewportWidth = width; ViewportHeight = height; Matrix = None }
+    let withViewport viewport camera =
+        { camera with Viewport = viewport; Matrix = None }
 
     let setPosition vec camera =
         camera.Position <- vec

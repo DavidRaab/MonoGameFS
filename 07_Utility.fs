@@ -174,8 +174,8 @@ type FMouseState() =
         state.Set(int button,true)
     member this.GetButton(button:MouseButton) =
         state.Get(int button)
-    member this.AddMouseState(ms:Input.MouseState) =
-        // Map Mouse Button o BitArray
+    member this.AddMouseState(ms:Input.MouseState, camera:Camera) =
+        // Map Mouse Button to BitArray
         let mapButtons buttons =
             for (mb,fb) in buttons do
                 if mb = Input.ButtonState.Pressed then
@@ -187,7 +187,9 @@ type FMouseState() =
             ms.XButton1,     MouseButton.XButton1
             ms.XButton2,     MouseButton.XButton2
         ]
-        position              <- Point(ms.X, ms.Y)
+
+        // Apply Viewport Offset or otherwise everything is fucked up
+        position              <- Point(ms.X - camera.Viewport.X, ms.Y - camera.Viewport.Y)
         scrollWheel           <- ms.ScrollWheelValue
         horizontalScrollWheel <- ms.HorizontalScrollWheelValue
 

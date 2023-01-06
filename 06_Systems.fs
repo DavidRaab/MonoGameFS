@@ -96,13 +96,12 @@ module SheetAnimations =
             )
 
 module Drawing =
-    let mousePosition (sb:SpriteBatch) (font:SpriteFont)  =
-        let state = Input.Mouse.GetState()
-        let world = Camera.screenToWorld (Vector2.create (float32 state.X) (float32 state.Y)) State.camera
+    let mousePosition (sb:SpriteBatch) (font:SpriteFont) position whereToDraw =
+        let world = Camera.screenPointToWorld position State.camera
         sb.DrawString(
             spriteFont = font,
-            text       = System.String.Format("Mouse Screen({0},{1}) World({2:0.00},{3:0.00})", state.X, state.Y, world.X, world.Y),
-            position   = Vector2(3f, 460f),
+            text       = System.String.Format("Mouse Screen({0},{1}) World({2:0.00},{3:0.00})", position.X, position.Y, world.X, world.Y),
+            position   = whereToDraw,
             color      = Color.Black,
             rotation   = 0f,
             origin     = Vector2.Zero,

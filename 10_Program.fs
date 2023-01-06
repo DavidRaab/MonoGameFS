@@ -44,10 +44,10 @@ let initModel assets =
     )
 
     let knight = Entity.init (fun e ->
-        e.addTransform (Transform.fromPosition 427f 200f)
+        e.addTransform (Transform.fromPosition 320f 200f)
         e.addView (
             SheetAnimations.toView FG1 assets.Knight
-            |> View.setScale (Vector2.create 3f 3f)
+            |> View.setScale (Vector2.create 2f 2f)
             |> View.withOrigin Top
         )
         e.addSheetAnimations (assets.Knight)
@@ -138,6 +138,7 @@ let initModel assets =
             else State (Choice1Of2 (state-1))
     ))
 
+    // Create 3000 Boxes
     let boxes = ResizeArray<_>()
     let yOffset = 50f
     for x=1 to 75 do
@@ -367,7 +368,7 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
     let gamepad  = Input.GamePad.GetState(0)
     FGamePad.addState gamepad
     let mouse    = Input.Mouse.GetState ()
-    FMouse.addState mouse
+    FMouse.addState (mouse,State.camera)
 
     // Close Game
     if keyboard.IsKeyDown Key.Escape then
@@ -408,15 +409,19 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear Color.CornflowerBlue
 
+    // Helper for the spriteBatch Pattern. You always call Begin doSomething and then End.
+    // On top i always use a camera for position everything
     let doSpriteBatch (sb:SpriteBatch) (camera:Camera) samplerState f =
         sb.Begin(transformMatrix = Camera.matrix camera, samplerState = samplerState)
         f sb
         sb.End()
     let onCamera = doSpriteBatch game.SpriteBatch
 
+    // Helper to draw a Rectangle
     let drawRect =
         Systems.Drawing.rectangle game.Asset.Sprites.Pixel 2 Color.MidnightBlue
 
+    // Draw Game Elements
     onCamera State.camera SamplerState.PointWrap (fun sb ->
         Systems.View.draw sb
 
@@ -430,9 +435,10 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
             drawRect start stop sb
     )
 
+    // Draw Game UI
     onCamera State.uiCamera SamplerState.LinearClamp (fun sb ->
         FPS.draw game.Asset.Font.Default sb
-        Systems.Drawing.mousePosition sb game.Asset.Font.Default
+        Systems.Drawing.mousePosition sb game.Asset.Font.Default (FMouse.position ()) (Vector2.create 3f 340f)
         Systems.Drawing.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
     )
 
@@ -454,7 +460,7 @@ let init (game:MyGame) =
     Input.Mouse.SetCursor Input.MouseCursor.Crosshair
 
     game.CalculateViewport ()
-    let viewport = game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height
+    let viewport = game.GraphicsDevice.Viewport
     State.camera   <- Camera.create (virtualWidth,virtualHeight) viewport |> Camera.withMinMaxZoom 0.03 3
     State.uiCamera <- Camera.create (virtualWidth,virtualHeight) viewport
 
@@ -466,7 +472,7 @@ let init (game:MyGame) =
         g.ApplyChanges()
         game.CalculateViewport ()
 
-        let viewport = game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height
+        let viewport = game.GraphicsDevice.Viewport
         State.camera   <- Camera.withViewport viewport State.camera
         State.uiCamera <- Camera.withViewport viewport State.uiCamera
     )
