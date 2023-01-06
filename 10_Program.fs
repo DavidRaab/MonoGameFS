@@ -200,6 +200,51 @@ type Action =
 
 let mutable knightState = IsIdle
 
+// Input mapping to User Actions
+let inputMapping = {
+    Keyboard = [
+        Key.Space, IsPressed, Attack
+        Key.Space, IsPressed, Attack
+        Key.Left,  IsKeyDown, MoveLeft  Vector2.left
+        Key.Right, IsKeyDown, MoveRight Vector2.right
+        Key.Down,  IsKeyDown, Crouch
+        Key.W,     IsKeyDown, Camera Vector2.up
+        Key.A,     IsKeyDown, Camera Vector2.left
+        Key.S,     IsKeyDown, Camera Vector2.down
+        Key.D,     IsKeyDown, Camera Vector2.right
+        Key.Home,  IsKeyDown, CameraHome
+        Key.R,     IsKeyDown, ZoomIn
+        Key.F,     IsKeyDown, ZoomOut
+    ]
+    GamePad = {
+        Buttons = [
+            Button.X,         IsPressed, Attack
+            Button.DPadLeft,  IsKeyDown, MoveLeft  Vector2.left
+            Button.DPadRight, IsKeyDown, MoveRight Vector2.right
+            Button.DPadDown,  IsKeyDown, Crouch
+        ]
+        ThumbStick = {
+            Left  = Some Movement
+            Right = Some Camera
+        }
+        Trigger = {
+            Left  = Some (fun m -> MoveLeft  (Vector2.left  * m))
+            Right = Some (fun m -> MoveRight (Vector2.right * m))
+        }
+    }
+    Mouse = {
+        Camera  = State.camera
+        Buttons = [
+            MouseButton.Left, IsPressed,  World (DragStart)
+            MouseButton.Left, IsKeyDown,  Screen(DragBetween)
+            MouseButton.Left, IsReleased, World (DragEnd)
+        ]
+        ScrollWheel           = Some (cmpInt (is ScrollZoom 1) (is ScrollZoom -1) (is ScrollZoom 0))
+        HorizontalScrollWheel = None
+        Position              = None
+    }
+}
+
 // A Fixed Update implementation that tuns at the specified fixedUpdateTiming
 let mutable resetInput = false
 let fixedUpdateTiming = sec (1.0 / 60.0)
@@ -210,49 +255,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     Systems.SheetAnimations.update deltaTime
 
     // Get all Input of user and maps them into actions
-    let actions = FInput.mapInput {
-        Keyboard = [
-            Key.Space, IsPressed, Attack
-            Key.Space, IsPressed, Attack
-            Key.Left,  IsKeyDown, MoveLeft  Vector2.left
-            Key.Right, IsKeyDown, MoveRight Vector2.right
-            Key.Down,  IsKeyDown, Crouch
-            Key.W,     IsKeyDown, Camera Vector2.up
-            Key.A,     IsKeyDown, Camera Vector2.left
-            Key.S,     IsKeyDown, Camera Vector2.down
-            Key.D,     IsKeyDown, Camera Vector2.right
-            Key.Home,  IsKeyDown, CameraHome
-            Key.R,     IsKeyDown, ZoomIn
-            Key.F,     IsKeyDown, ZoomOut
-        ]
-        GamePad = {
-            Buttons = [
-                Button.X,         IsPressed, Attack
-                Button.DPadLeft,  IsKeyDown, MoveLeft  Vector2.left
-                Button.DPadRight, IsKeyDown, MoveRight Vector2.right
-                Button.DPadDown,  IsKeyDown, Crouch
-            ]
-            ThumbStick = {
-                Left  = Some Movement
-                Right = Some Camera
-            }
-            Trigger = {
-                Left  = Some (fun m -> MoveLeft  (Vector2.left  * m))
-                Right = Some (fun m -> MoveRight (Vector2.right * m))
-            }
-        }
-        Mouse = {
-            Camera  = State.camera
-            Buttons = [
-                MouseButton.Left, IsPressed,  World (DragStart)
-                MouseButton.Left, IsKeyDown,  Screen(DragBetween)
-                MouseButton.Left, IsReleased, World (DragEnd)
-            ]
-            ScrollWheel           = Some (cmpInt (is ScrollZoom 1) (is ScrollZoom -1) (is ScrollZoom 0))
-            HorizontalScrollWheel = None
-            Position              = None
-        }
-    }
+    let actions = FInput.mapInput inputMapping
 
     // Handle Rectangle Drawing
     let model =
