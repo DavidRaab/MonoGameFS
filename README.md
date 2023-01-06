@@ -1,28 +1,30 @@
 ### About the Project: MonoGame + F#
 
 I started game development some years ago and was unhappy about most engines.
-I learnd Unity first but the way how you structure your project is just horrible
-in my opinion. Even if they say it would be an ECS system, it isnt. Unity
+I learned Unity first but the way how you structure your project is just horrible
+in my opinion. Even if they say it would be an ECS system, it isn't. Unity
 just provides Components with the lack of Entity and the Systems making
 it a different kind of an architecture.
 
-On top i was already used to functional programming before from Perl & JavaScript
-and really disliked OO over the years more and more. When i started to learn F#
-i already used it with Unity but it doesn't worked well together.
+On top I was already used to functional programming before from Perl & JavaScript
+and really disliked OO over the years more and more. So working with Unity
+and C# became more and more pain to me to. Especially after learning F#. When I
+started to learn F# I already used it with Unity but it doesn't worked well together.
 
-So after i deleted all my projects i started again and choosed MonoGame as
+So after I deleted all my projects I started again and choosed MonoGame as
 a development platform.
 
 Monogame has the advantage of full control. Basically just four methods to
 overwrite. How you structure and design your game is your own choice. But
-that's also its disadvnatage as you have to write everything from the ground up
-yourself.
+that's also its disadvantage as you have to write everything from the ground up
+yourself. What also is an advantage as I learn myself a lot about game
+development.
 
 This project aims to become a general engine on top of Monogame. The goal is to
-provide a true ECS architecture combined with the idea MVU architecture introduced
+provide a true ECS architecture combined with the MVU architecture introduced
 by Elm.
 
-A game is really nothing else as a continous calls to an `update` function,
+A game is really nothing else as a continous call to an `update` function,
 preferrably running at least with 60 frames per second and then `draw` the
 current state (Model) of the game.
 
@@ -31,36 +33,36 @@ sense if everything becomes immutable. That's why it is still the Elm architectu
 The performance critical things are written with mutability in most cases, but
 the less critical things, what is still most of the game logic, can use immutability.
 
-With this project i work towards this goal. I implement most of the features
+With this project I work towards this goal. I implement most of the features
 that a basic 2D game needs. Providing abstraction of the most parts with an ECS
 architecture that works well in a functional approach.
 
 # Features implemented
 
-* Entity: Everything is an entity and you can add/removes components at runtime.
+* Entity: Everything is an entity and you can add/remove components at runtime.
 * Sprite Sheet & Animations
 * Transforms: Every Entity can have a parent and is positioned, scaled and rotated to its parent
 * Camera: It supports multiple cameras that you can move or Zoom
 * Input Handling: Inputs are transformed to Actions
 * Timer System: Running code periodically or after a specific time-frame that depends on the GameTime
 * RenderTarget: You specify an internal resolution and the game scales with the display resolution
-* Fixed Update Handling: a fixed update loop that runs as often as needed per seconds independed from the frame-rate.
+* Fixed Update: A fixed update loop that runs as often as needed per seconds independent from the frame-rate.
 
 # Features to come
 
 * UI
 * Animation System
-* Multiple GameTime
+* Multiple GameTime's
 * State Machine or Behaviour Trees
 * Basic Collision System maybe Physics
 * Particle System
 * Sound / Music
-* Separation into its own library
+* Separation into its own library (will probably be the last step)
 
 # Stability
 
 Currently nothing is stable. The whole API and data-structures will likely change
-over time as I see fit to it. The engine will only target F# no other .NET language.
+over time as I see fit to it. The engine will only target F# and no other .NET language.
 
 ### License
 
