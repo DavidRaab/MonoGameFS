@@ -43,14 +43,14 @@ components and systems.
 
 # Features implemented
 
-* Entity: Everything is an entity and you can add/remove components at runtime.
-* Sprite Sheet & Animations
-* Transforms: Every Entity can have a parent and is positioned, scaled and rotated to its parent
-* Camera: It supports multiple cameras that you can move or Zoom
-* Input Handling: Inputs are transformed to Actions
-* Timer System: Running code periodically or after a specific time-frame that depends on the GameTime
-* RenderTarget: You specify an internal resolution and the game scales with the display resolution
-* Fixed Update: A fixed update loop that runs as often as needed per seconds independent from the frame-rate.
+* **Entity**: Everything is an entity and you can add/remove components at runtime.
+* Sprite Sheet & Sprite Sheet Animations
+* **Transforms**: Every Entity can have a parent and is positioned, scaled and rotated to its parent
+* **Camera**: It supports multiple cameras that you can move or Zoom
+* **Input Handling**: Inputs are transformed to Actions
+* **Timer System**: Running code periodically or after a specific time-frame that depends on the GameTime
+* **RenderTarget**: You specify an internal resolution and the game scales with the display resolution
+* **Fixed Update**: A fixed update loop that runs as often as needed per seconds independent from the frame-rate.
 
 # Features to come
 
