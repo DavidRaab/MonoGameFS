@@ -265,7 +265,6 @@ type FMouseAction<'Action> =
     | World  of (Vector2 -> 'Action)
 
 type InputMouse<'Action> = {
-    Camera:                Camera
     Buttons:               list<MouseButton * ButtonState * FMouseAction<'Action>>
     ScrollWheel:           option<int   -> 'Action>
     HorizontalScrollWheel: option<int   -> 'Action>
@@ -279,7 +278,7 @@ type Input<'Action> = {
 }
 
 module FInput =
-    let mapInput definition =
+    let mapInput camera definition =
         let actions = ResizeArray<_>()
 
         // Keyboard Input Handling
@@ -322,7 +321,7 @@ module FInput =
         let mouseAction action =
             match action with
             | Screen f -> f (FMouse.position ())
-            | World  f -> f (Camera.screenPointToWorld (FMouse.position ()) definition.Mouse.Camera)
+            | World  f -> f (Camera.screenPointToWorld (FMouse.position ()) camera)
 
         for button,state,action in definition.Mouse.Buttons do
             match state with

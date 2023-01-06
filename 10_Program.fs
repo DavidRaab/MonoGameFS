@@ -233,7 +233,6 @@ let inputMapping = {
         }
     }
     Mouse = {
-        Camera  = State.camera
         Buttons = [
             MouseButton.Left, IsPressed,  World (DragStart)
             MouseButton.Left, IsKeyDown,  Screen(DragBetween)
@@ -255,7 +254,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     Systems.SheetAnimations.update deltaTime
 
     // Get all Input of user and maps them into actions
-    let actions = FInput.mapInput inputMapping
+    let actions = FInput.mapInput State.camera inputMapping
 
     // Handle Rectangle Drawing
     let model =
@@ -450,6 +449,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     )
 
     if resetInput then
+        resetInput <- false
         FKeyboard.nextState ()
         FGamePad.nextState  ()
         FMouse.nextState    ()
