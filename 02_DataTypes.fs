@@ -36,15 +36,16 @@ type ViewLayer =
     | UI1
 
 type Camera = {
-    mutable CameraPosition: Vector2
-    mutable Zoom:   float
-    VirtualWidth:   int
-    VirtualHeight:  int
-    ViewportWidth:  int
-    ViewportHeight: int
-    Origin:         Origin
-    MinZoom:        float
-    MaxZoom:        float
+    mutable Position: Vector2
+    mutable Zoom:     float
+    mutable Matrix:   Matrix option // This field is used for caching the matrix
+    VirtualWidth:     int
+    VirtualHeight:    int
+    ViewportWidth:    int
+    ViewportHeight:   int
+    Origin:           Origin
+    MinZoom:          float
+    MaxZoom:          float
 }
 
 type Sprite = {

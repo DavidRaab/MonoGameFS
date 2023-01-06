@@ -95,8 +95,8 @@ module Transform =
         t
 
     /// Adds a vector to the Position
-    let addPosition vec2 pos =
-        pos.Position <- pos.Position + vec2
+    let addPosition vec2 (t:Transform) =
+        t.Position <- t.Position + vec2
 
 
 module Sprite =
@@ -329,52 +329,67 @@ module Movement =
         create (Vector2(x,y))
 
 module Camera =
-    let create (w,h) (vw,vh) = {
-        Camera.CameraPosition = Vector2.create 0f 0f
-        Zoom                  = 1.0
-        VirtualWidth          = w
-        VirtualHeight         = h
-        ViewportWidth         = vw
-        ViewportHeight        = vh
-        Origin                = Center
-        MinZoom               = 0.03
-        MaxZoom               = 2.0
-    }
-
-    let withMinMaxZoom min max camera =
-        { camera with MinZoom = min; MaxZoom = max }
-
-    let withViewport (width,height) camera =
-        { camera with ViewportWidth = width; ViewportHeight = height }
-
     let virtualScale camera =
         let scale = float32 camera.ViewportWidth / float32 camera.VirtualWidth
         Vector3(scale,scale,1f)
 
+    /// Calculates and returns the Matrix of the Camera. This ignores the Matrix field of
+    /// the record. It is used to calculate the Matrix to reset the field.
+    let calculateMatrix camera =
+        let origin = Origin.toVector (float32 camera.VirtualWidth) (float32 camera.VirtualHeight) camera.Origin
+
+        Matrix.CreateScale         (virtualScale camera)
+        * Matrix.CreateTranslation (Vector3(-camera.Position , 0f))
+        * Matrix.CreateTranslation (Vector3(-origin, 0f))
+        * Matrix.CreateScale       (float32 camera.Zoom, float32 camera.Zoom, 1f)
+        * Matrix.CreateTranslation (Vector3(origin, 0f))
+
+    let create (w,h) (vw,vh) = {
+        Camera.Position = Vector2.create 0f 0f
+        Zoom            = 1.0
+        Matrix          = None
+        VirtualWidth    = w
+        VirtualHeight   = h
+        ViewportWidth   = vw
+        ViewportHeight  = vh
+        Origin          = Center
+        MinZoom         = 0.03
+        MaxZoom         = 2.0
+    }
+
+    let withMinMaxZoom min max camera =
+        { camera with MinZoom = min; MaxZoom = max; Matrix = None }
+
+    let withViewport (width,height) camera =
+        { camera with ViewportWidth = width; ViewportHeight = height; Matrix = None }
+
     let setPosition vec camera =
-        camera.CameraPosition <- vec
-        camera
+        camera.Position <- vec
+        camera.Matrix   <- None
 
     let setZoom zoom camera =
-        camera.Zoom <-clamp zoom camera.MinZoom camera.MaxZoom
-        camera
+        camera.Zoom   <- clamp zoom camera.MinZoom camera.MaxZoom
+        camera.Matrix <- None
 
     let addZoom addition camera =
-        camera.Zoom <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom + addition)
+        camera.Zoom   <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom + addition)
+        camera.Matrix <- None
 
     let subtractZoom subtraction camera =
-        camera.Zoom <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom - subtraction)
+        camera.Zoom   <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom - subtraction)
+        camera.Matrix <- None
 
     let add vec camera =
-        camera.CameraPosition <- camera.CameraPosition + vec
+        camera.Position <- camera.Position + vec
+        camera.Matrix   <- None
 
     let matrix camera =
-        let origin = Origin.toVector (float32 camera.VirtualWidth) (float32 camera.VirtualHeight) camera.Origin
-        Matrix.CreateScale          (virtualScale camera)
-        * Matrix.CreateTranslation  (Vector3(-camera.CameraPosition , 0f))
-        * Matrix.CreateTranslation  (Vector3(-origin, 0f))
-        * Matrix.CreateScale        (float32 camera.Zoom, float32 camera.Zoom, 1f)
-        * Matrix.CreateTranslation  (Vector3(origin, 0f))
+        match camera.Matrix with
+        | Some matrix -> matrix
+        | None        ->
+            let matrix = calculateMatrix camera
+            camera.Matrix <- Some matrix
+            matrix
 
     let screenToWorld position camera =
         Vector2.Transform(position, Matrix.Invert (matrix camera))
