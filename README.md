@@ -37,6 +37,10 @@ With this project I work towards this goal. I implement most of the features
 that a basic 2D game needs. Providing abstraction of the most parts with an ECS
 architecture that works well in a functional approach.
 
+When the goal complets a user of the engine will only have to write `09_Assets.fs`
+and `10_Program.fs` for his own game. Maybe adding other files for his/her own
+components and systems.
+
 # Features implemented
 
 * Entity: Everything is an entity and you can add/remove components at runtime.
