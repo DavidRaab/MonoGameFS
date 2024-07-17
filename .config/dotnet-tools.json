@@ -6,7 +6,15 @@
       "version": "3.8.1.303",
       "commands": [
         "mgcb"
-      ]
+      ],
+      "rollForward": false
+    },
+    "dotnet-mgcb-editor-linux": {
+      "version": "3.8.1.303",
+      "commands": [
+        "mgcb-editor-linux"
+      ],
+      "rollForward": false
     }
   }
 }
