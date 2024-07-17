@@ -135,10 +135,14 @@ module Extensions =
             Vector2.create (System.MathF.Cos(float32 angle)) (System.MathF.Sin(float32 angle))
 
     type System.Collections.Generic.Dictionary<'a,'b> with
+        /// add or overwrites value for specified key. return value of `true`
+        /// inidicates that the key was added to the Dictionary
         static member add key value (dic:Dictionary<'a,'b>) =
-            if   dic.ContainsKey(key)
+            let contained = dic.ContainsKey(key)
+            if   contained
             then dic.[key] <- value
             else dic.Add(key,value)
+            not contained
 
         static member change key f (dic:Dictionary<'a,'b>) =
             match dic.TryGetValue key with

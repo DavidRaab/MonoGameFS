@@ -12,8 +12,9 @@ type State<'Component>() =
     member this.Entities          = set
     member this.OnEntitiesChanged = onEntitiesChanged.Publish
 
+    /// adds or overwrite 'Component for Entity
     member this.add comp entity =
-        Dictionary.add entity comp state
+        Dictionary.add entity comp state |> ignore
         if this.Entities.Add entity then
             onEntitiesChanged.Trigger ()
 
