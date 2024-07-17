@@ -54,14 +54,27 @@ components and systems.
 
 # Features to come
 
+## Important
+
+When those are implemented, it is possible to create some games.
+
 * UI
-* Animation System
+* Scenes / LevelEditor (Loading)
 * Multiple GameTime's
 * State Machine or Behaviour Trees
+* Sound / Music
+
+## Secondly
+
+Neat feature to have, but some games work without those.
+
+* Animation System
 * Basic Collision System maybe Physics
 * Particle System
-* Sound / Music
-* Separation into its own library (will probably be the last step)
+
+## Least important
+
+* Separation into its own library.
 
 # Stability
 
