@@ -23,6 +23,7 @@ type MouseRectangle =
 type Model = {
     Knight:         Entity
     MouseRectangle: MouseRectangle
+    BoxesOrigin:    Entity
 }
 
 // Initialize the Game Model
@@ -138,15 +139,25 @@ let initModel assets =
             else State (Choice1Of2 (state-1))
     ))
 
-    // Create 3000 Boxes
+    // Origin of the 3000 boxes
+    let boxesOrigin = Entity.init (fun e ->
+        e.addTransform (Transform.fromPosition 0f 0f)
+    )
+
     let boxes = ResizeArray<_>()
     let yOffset = 50f
+    // Create 3000 Boxes as child of boxesOrigin
     for x=1 to 75 do
         for y=1 to 40 do
             boxes.Add (Entity.init (fun box ->
-                box.addTransform (Transform.fromPosition (float32 x * 11f) (float32 y * 11f + yOffset))
-                box.addView      (View.fromSprite assets.Sprites.WhiteBox BG1)
-                box.addMovement  (Movement.create (Vector2.right * 30f))
+                box.addTransform       (
+                    Transform.fromPosition (float32 x * 11f) (float32 y * 11f + yOffset)
+                    // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
+                    // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
+                    |> Transform.withParent (ValueSome boxesOrigin)
+                )
+                box.addView            (SheetAnimations.toView BG1 assets.Box)
+                box.addSheetAnimations (SheetAnimations.copy assets.Box)
             ))
 
     // Make the 3000 boxes move
@@ -166,6 +177,7 @@ let initModel assets =
     let gameState = {
         Knight         = knight
         MouseRectangle = NoRectangle
+        BoxesOrigin    = boxesOrigin
     }
     gameState
 
@@ -352,6 +364,11 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         | ScrollZoom (IsSmaller 0 x) -> Camera.subtractZoom   0.1 State.camera
         | Camera v                   -> Camera.add           (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
         | _                          -> ()
+
+    // Rotate BoxesOrigin
+    model.BoxesOrigin |> State.Transform.iter (fun t ->
+        Transform.addRotation (Radian.fromDeg 45f<deg> * fDeltaTime) t
+    )
 
     // Whenever one fixedUpdate runs the Input states should be resetted
     // But the current input information should also be avaiable in draw

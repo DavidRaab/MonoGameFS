@@ -9,6 +9,7 @@ type Assets = {
     Font:    Fonts
     Sprites: Sprites
     Knight:  SheetAnimations
+    Box:     SheetAnimations
 }
 and Sprites = {
     Pixel:    Sprite
@@ -36,5 +37,12 @@ module Assets =
             "Attack" => SheetAnimation.create  50<ms> false (Sheet.fromColumnsRows  4 1 (load "FreeKnight/Attack"))
             "Run"    => SheetAnimation.create 100<ms> true  (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Run"))
             "Crouch" => SheetAnimation.create   0<ms> false (Sheet.fromTexture          (load "FreeKnight/Crouch"))
+        ]
+        Box = SheetAnimations.create "Default" [
+            "Default" => SheetAnimation.create 250<ms> true (Sheet.fromSprites [
+                Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.White))
+                Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.Red))
+                Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.Blue))
+            ])
         ]
     }

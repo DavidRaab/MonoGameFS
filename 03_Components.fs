@@ -98,6 +98,9 @@ module Transform =
     let addPosition vec2 (t:Transform) =
         t.Position <- t.Position + vec2
 
+    let addRotation rotation (t:Transform) =
+        t.Direction <- Vector2.fromAngle ((Vector2.angle t.Direction) + rotation)
+
 
 module Sprite =
     let create tex rect = {
@@ -241,6 +244,11 @@ module Sheet =
         |]
     }
 
+    /// Generates a Sheet by directly passing the individual sprites
+    let fromSprites sprites = {
+        Sprites = Array.ofSeq sprites
+    }
+
 
 module SheetAnimation =
     let create (duration:int<ms>) isLoop sheet = {
@@ -249,6 +257,15 @@ module SheetAnimation =
         IsLoop        = isLoop
         ElapsedTime   = TimeSpan.Zero
         Duration      = TimeSpan.FromMilliseconds (float (duration / 1<ms>))
+    }
+
+    // FIXME: See SheetAnimation.copy
+    let copy sheet = {
+        Sheet         = sheet.Sheet
+        CurrentSprite = sheet.CurrentSprite
+        IsLoop        = sheet.IsLoop
+        ElapsedTime   = sheet.ElapsedTime
+        Duration      = sheet.Duration
     }
 
     let sheet anim =
@@ -288,6 +305,17 @@ module SheetAnimations =
         }
         else
             failwithf "Cannot set active Animation to \"%s\" valid animations are %A" active validAnims
+
+    // FIXME: SheetAnimations must be separated into two components. One Component
+    //        just describes the Animation and is immutable. It does not contain
+    //        any data for the running animation.
+    //        Then from the SheetAnimations there is a mutable structure that contains
+    //        the current sprite for the given entity.
+    //        Currently I just copy SheetAnimations to a new Structure for an easy fix.
+    let copy sheets = {
+        Animations = sheets.Animations |> Map.map (fun name sheet -> SheetAnimation.copy sheet)
+        Active     = sheets.Active
+    }
 
     let hasAnimation str anims =
         Seq.contains str anims.Animations.Keys
