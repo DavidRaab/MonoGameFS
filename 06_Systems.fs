@@ -64,7 +64,7 @@ module Movement =
         for entity in Entity.transformAndMovement.GetCache () do
             entity |> State.Movement.iter   (fun mov ->
             entity |> State.Transform.iter  (fun t ->
-                Transform.addPosition (t.Position + (mov.Direction * float32 deltaTime.TotalSeconds)) t
+                Transform.addPosition (mov.Direction * float32 deltaTime.TotalSeconds) t
             ))
 
 module Timer =
