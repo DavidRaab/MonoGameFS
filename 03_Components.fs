@@ -323,6 +323,7 @@ module Movement =
     let create dir =
         { Direction = dir }
 
+    /// get .Direction of Component
     let direction (m:Movement) = m.Direction
 
     let createXY x y =
