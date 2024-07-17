@@ -14,6 +14,8 @@ type TimeSpan = System.TimeSpan
 // View System draws entity
 module View =
     // Calculates position, rotation and scale relative to parent
+    // returns an voption because it is called recursively on transform. ValueNone
+    // indicates when a parent has no transform defined and recursion ends.
     let rec calculateTransform (me:Transform) =
         match me.Parent with
         | ValueNone        -> ValueSome (me.Position,Vector2.angle me.Direction,me.Scale)
