@@ -124,6 +124,13 @@ module Extensions =
         static member angle (vec:Vector2) =
             System.MathF.Atan2(vec.Y, vec.X) * 1f<rad>
 
+        static member rng = System.Random()
+        /// creates a random vector where x,y are in range from -1 to 1
+        static member random () =
+            Vector2.create
+                (Vector2.rng.NextSingle() * 2.0f - 1.0f)
+                (Vector2.rng.NextSingle() * 2.0f - 1.0f)
+
         static member fromAngle (angle: float32<rad>) =
             Vector2.create (System.MathF.Cos(float32 angle)) (System.MathF.Sin(float32 angle))
 
