@@ -146,18 +146,19 @@ let initModel assets =
             boxes.Add (Entity.init (fun box ->
                 box.addTransform (Transform.fromPosition (float32 x * 11f) (float32 y * 11f + yOffset))
                 box.addView      (View.fromSprite assets.Sprites.WhiteBox BG1)
+                box.addMovement  (Movement.create (Vector2.right * 30f))
             ))
 
     // Make the 3000 boxes move
-    Systems.Timer.addTimer (Timer.every (sec 1.0) false (fun state dt ->
-        let vec = if state then Vector2.right * 10f else Vector2.left * 10f
+    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
+        // changes direction of every box every second to a new random direction
         for box in boxes do
-            State.Transform.iter (Transform.addPosition vec) box
-        State (not state)
+            State.Movement.add (Movement.create (Vector2.random() * 30f)) box
+        State ()
     ))
 
     // Periodically run Garbage Collector
-    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun _ _ ->
+    Systems.Timer.addTimer (Timer.every (sec 10.0) () (fun _ _ ->
         System.GC.Collect ()
         State ()
     ))
