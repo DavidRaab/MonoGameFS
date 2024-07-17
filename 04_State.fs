@@ -18,9 +18,13 @@ type State<'Component>() =
         if this.Entities.Add entity then
             onEntitiesChanged.Trigger ()
 
+    /// Get 'Component for Entity
     member _.get entity =
         Dictionary.find entity state
 
+    /// Reads the current 'Component from state and lets you return a new 'Component.
+    /// Typically only useful when the computation depends on the current value or
+    /// a 'Component should be Created/Removed during computation.
     member this.change entity f =
         let before = state.ContainsKey entity
         Dictionary.change entity f state
@@ -35,16 +39,23 @@ type State<'Component>() =
         | false, false | true, true ->
             ()
 
+    /// reads current 'Component of Entity and sets it to the new value
+    /// returned by the function. Usually what you want to-do when you want
+    /// to change an immutable field of a 'Component.
     member _.map f entity =
         match state.TryGetValue entity with
         | true, value -> state.[entity] <- f value
         | false, _    -> ()
 
+    /// reads current 'Component of Entity and passes it to the function.
+    /// As the function returns nothing this method is useful when you want
+    /// to change a mutable field of a 'Component.
     member _.iter f entity =
         match state.TryGetValue entity with
         | true, value -> f value
         | false, _    -> ()
 
+    /// Deletes 'Component for Entity
     member this.delete entity =
         state.Remove entity |> ignore
         if this.Entities.Remove entity then
