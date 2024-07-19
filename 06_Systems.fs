@@ -18,13 +18,12 @@ module View =
     // indicates when a parent has no transform defined and recursion ends.
     let rec calculateTransform (me:Transform) =
         match me.Parent with
-        | ValueNone        -> ValueSome (me.Position,Vector2.angle me.UpDirection,me.Scale)
+        | ValueNone        -> ValueSome (me.Position,me.Rotation,me.Scale)
         | ValueSome parent ->
             match State.Transform.get parent with
             | ValueNone        -> ValueNone
             | ValueSome parent ->
                 (calculateTransform parent) |> ValueOption.map (fun (pPos,pRot,pScale) ->
-                    let rot   = Vector2.angle me.UpDirection
                     let scale = Vector2.create (pScale.X * me.Scale.X) (pScale.Y * me.Scale.Y)
                     let pos   = Vector2.Transform(
                         me.Position,
@@ -32,7 +31,7 @@ module View =
                         * Matrix.CreateRotationZ(float32 pRot)       // rotate by parent position
                         * Matrix.CreateTranslation(Vector3(pPos,0f)) // translate by parent position
                     )
-                    pos,pRot+rot,scale
+                    pos,pRot+me.Rotation,scale
                 )
 
     let draw (sb:SpriteBatch) =
@@ -63,20 +62,20 @@ module View =
 // Moves those who should be moved
 module Movement =
     let update (deltaTime:TimeSpan) =
+        let fdt = float32 deltaTime.TotalSeconds
         for entity in Entity.transformAndMovement.GetCache () do
-            entity |> State.Movement.iter   (fun mov ->
-            entity |> State.Transform.iter  (fun t ->
-                // FIXME: calculateTransform also must be called here ???
+            entity |> State.Movement.iter  (fun mov ->
+            entity |> State.Transform.iter (fun t ->
                 match mov.Direction with
                 | ValueNone                        -> ()
-                | ValueSome (Relative dir)         -> Transform.addPosition (dir * float32 deltaTime.TotalSeconds) t
+                | ValueSome (Relative dir)         -> Transform.addPosition (dir * fdt) t
                 | ValueSome (Absolute (pos,speed)) ->
                     let dir = (Vector2.Normalize (pos - t.Position)) * speed
-                    Transform.addPosition (dir * float32 deltaTime.TotalSeconds) t
+                    Transform.addPosition (dir * fdt) t
 
                 match mov.Rotation with
                 | ValueNone     -> ()
-                | ValueSome rot -> Transform.addRotation (rot * float32 deltaTime.TotalSeconds) t
+                | ValueSome rot -> Transform.addRotation (rot * fdt) t
             ))
 
 module Timer =

@@ -39,17 +39,17 @@ type State<'Component>() =
         | false, false | true, true ->
             ()
 
-    /// reads current 'Component of Entity and sets it to the new value
-    /// returned by the function. Usually what you want to-do when you want
-    /// to change an immutable field of a 'Component.
+    /// try to read current 'Component of Entity and executes mapping function
+    /// when a component is defined. mapping function then returns the new
+    /// component that is used to overwrite previous one.
     member _.map f entity =
         match state.TryGetValue entity with
         | true, value -> state.[entity] <- f value
         | false, _    -> ()
 
-    /// reads current 'Component of Entity and passes it to the function.
+    /// try to read current 'Component of Entity and when exists passes it to the function.
     /// As the function returns nothing this method is useful when you want
-    /// to change a mutable field of a 'Component.
+    /// to change a mutable field of a 'Component or do other kind of side-effects.
     member _.iter f entity =
         match state.TryGetValue entity with
         | true, value -> f value

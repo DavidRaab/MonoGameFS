@@ -10,9 +10,9 @@ type Entity =
 
 type Transform = {
     Parent: Entity voption
-    mutable Position:    Vector2
-    mutable UpDirection: Vector2
-    mutable Scale:       Vector2
+    mutable Position: Vector2
+    mutable Rotation: float32<rad>
+    mutable Scale:    Vector2
 }
 
 type Origin =

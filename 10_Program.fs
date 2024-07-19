@@ -78,19 +78,19 @@ let initModel assets =
             |> View.setTint Color.Yellow
             |> View.withOrigin Center
         )
-        // Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
-        //     match state with
-        //     | Choice1Of2 right ->
-        //         e |> State.Transform.iter (Transform.addPosition (Vector2.right * 5f))
-        //         if right < 20
-        //         then State (Choice1Of2 (right+1))
-        //         else State (Choice2Of2 (right-1))
-        //     | Choice2Of2 left ->
-        //         e |> State.Transform.iter (Transform.addPosition (Vector2.left * 5f))
-        //         if left > 0
-        //         then State (Choice2Of2 (left-1))
-        //         else State (Choice1Of2 (left+1))
-        // ))
+        Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
+            match state with
+            | Choice1Of2 right ->
+                e |> State.Transform.iter (Transform.addPosition (Vector2.Right * 5f))
+                if right < 20
+                then State (Choice1Of2 (right+1))
+                else State (Choice2Of2 (right-1))
+            | Choice2Of2 left ->
+                e |> State.Transform.iter (Transform.addPosition (Vector2.Left * 5f))
+                if left > 0
+                then State (Choice2Of2 (left-1))
+                else State (Choice1Of2 (left+1))
+        ))
     )
 
     let planet1 = Entity.init (fun e ->
@@ -129,12 +129,11 @@ let initModel assets =
         )
     )
 
-    // Let stars rotate
-    Systems.Timer.addTimer (Timer.every (sec 0.03333) 0f<rad> (fun state dt ->
-        let rotate t =
-            Transform.setDirection (Vector2.fromAngleRad state) t |> ignore
-        List.iter (State.Transform.iter rotate) [sun;planet1;planet2;planet3]
-        State (state + Radian.fromDeg 1f<deg>)
+    // Let stars rotate at 60 fps and 1° each frame
+    Systems.Timer.addTimer (Timer.every (sec (1.0/60.0)) () (fun state dt ->
+        let deg1 = Radian.fromDeg 1.0<deg>
+        List.iter (State.Transform.iter (Transform.addRotation deg1)) [sun;planet1;planet2;planet3]
+        State ()
     ))
 
     // Makes the box over the knight move from left/right like Knight Rider!
@@ -156,63 +155,68 @@ let initModel assets =
             else State (Choice1Of2 (state-1))
     ))
 
-    // Origin of the 3000 boxes
+    // black box that rotates
     let boxesOrigin = Entity.init (fun e ->
         e.addView      (View.fromSprite assets.Sprites.WhiteBox BG1 |> View.setTint Color.Black)
         e.addTransform (Transform.fromPosition 0f 0f)
         e.addMovement {
-            Direction = ValueSome (Relative (Vector2.Right * 50f))
-            Rotation  = ValueSome 1f<rad>
+            Direction = ValueNone // ValueSome (Relative (Vector2.Right * 50f))
+            Rotation  = ValueSome 2f<rad>
         }
     )
 
     let boxes = ResizeArray<_>()
-    let yOffset = 50f
-    // Create 3000 Boxes as child of boxesOrigin
-    for x=1 to 75 do
-        for y=1 to 40 do
+    //  3000 boxes without parent -> 2150 fps
+    //  4000 boxes without parent -> 1650 fps
+    //  5000 boxes without parent -> 1250 fps
+    //  6000 boxes without parent -> 1050 fps
+    // 10000 boxes without parent ->  400 fps
+    //
+    //  3000 boxes with parent    -> 1200 fps
+    //  4000 boxes with parent    -> 1000 fps
+    //  5000 boxes with parent    ->  750 fps
+    //  6000 boxes with parent    ->  660 fps
+    // 10000 boxes with parent    ->  280 fps
+    //
+    // Create 3600 Boxes as child of boxesOrigin
+    for x=1 to 60 do
+        for y=1 to 60 do
             boxes.Add (Entity.init (fun box ->
                 box.addTransform       (
-                    Transform.fromPosition (float32 x * 11f) (float32 y * 11f + yOffset)
-                    // |> Transform.setDirection (Vector2.fromAngleDeg 45f<deg>)
+                    Transform.fromPosition (float32 x * 11f) (float32 y * 11f)
                     // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
                     // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
-                    // |> Transform.withParent (ValueSome boxesOrigin)
+                    |> Transform.withParent (ValueSome boxesOrigin)
                 )
                 box.addView            (SheetAnimations.toView BG1 assets.Box)
                 box.addSheetAnimations (SheetAnimations.copy assets.Box)
                 // box |> State.View.map (View.withOrigin Center)
                 box.addMovement {
                     Direction = ValueNone //ValueSome (Relative (Vector2.Right * 25f))
-                    Rotation  = ValueSome (1f<rad>)
+                    Rotation  = ValueSome (2f<rad>)
                 }
             ))
 
-    // Make the 3000 boxes move
+    // let all boxes move
     let rng = System.Random ()
-    // Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
-    //     // changes direction and rotation of every box every second to a
-    //     // new random direction/rotation
-    //     for box in boxes do
-    //         // 10% of all boxes will move to world position 0,0 with 10px per second
-    //         // all other boxes move in a random direction at 25px per second
-    //         // box |> State.Movement.add {
-    //         //     Direction = ValueSome(
-    //         //         if   rng.NextSingle() < 0.1f
-    //         //         then Absolute (Vector2.Zero,10f)
-    //         //         else Relative (Vector2.randomDirection 25f)
-    //         //     )
-    //         //     Rotation = ValueSome(
-    //         //         Radian.fromDeg (rng.NextSingle() * 60f<deg> - 30f<deg>)
-    //         //     )
-    //         // }
-
-    //         box |> State.Movement.add {
-    //             Direction = ValueSome (Relative (Vector2.right * 25f))
-    //             Rotation  = ValueSome (1f<rad>)
-    //         }
-    //     State ()
-    // ))
+    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
+        // changes direction and rotation of every box every second to a
+        // new random direction/rotation
+        for box in boxes do
+            // 10% of all boxes will move to world position 0,0 with 10px per second
+            // all other boxes move in a random direction at 25px per second
+            box |> State.Movement.add {
+                Direction = ValueSome(
+                    if   rng.NextSingle() < 0.1f
+                    then Absolute (Vector2.Zero,10f)
+                    else Relative (Vector2.randomDirection 25f)
+                )
+                Rotation = ValueSome(
+                    Radian.fromDeg (rng.NextDouble() * 60.0<deg> - 30.0<deg>)
+                )
+            }
+        State ()
+    ))
 
     // Periodically run Garbage Collector
     Systems.Timer.addTimer (Timer.every (sec 10.0) () (fun _ _ ->
@@ -308,8 +312,8 @@ let mutable resetInput = false
 let fixedUpdateTiming = sec (1.0 / 60.0)
 let fixedUpdate model (deltaTime:TimeSpan) =
     let fDeltaTime = float32 deltaTime.TotalSeconds
-    Systems.Movement.update        deltaTime
     Systems.Timer.update           deltaTime
+    Systems.Movement.update        deltaTime
     Systems.SheetAnimations.update deltaTime
 
     // Get all Input of user and maps them into actions
@@ -410,11 +414,6 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         | ScrollZoom (IsSmaller 0 x) -> Camera.subtractZoom   0.1 State.camera
         | Camera v                   -> Camera.add           (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
         | _                          -> ()
-
-    // Rotate BoxesOrigin
-    // model.BoxesOrigin |> State.Transform.iter (fun t ->
-    //     Transform.addRotation (Radian.fromDeg 45f<deg> * fDeltaTime) t
-    // )
 
     // Whenever one fixedUpdate runs the Input states should be resetted
     // But the current input information should also be avaiable in draw

@@ -104,7 +104,7 @@ module Extensions =
         let oneSecond = sec 1.0
 
     type Vector2 with
-        static member create (x:float32) (y:float32) =
+        static member inline create (x:float32) (y:float32) =
             Vector2(x,y)
         static member Multiply (left:Vector2, right:TimeSpan) =
             Vector2.Multiply(left, float32 right.TotalSeconds)
@@ -191,6 +191,7 @@ module Extensions =
             ) map
 
     module HashSet =
+        /// returns a new HashSet that only contains elements that appears in both
         let intersect (x:HashSet<'a>) (y:HashSet<'a>) =
             let smaller, greater =
                 if x.Count < y.Count then x,y else y,x
@@ -202,12 +203,14 @@ module Extensions =
 
             newHashSet
 
+        /// shallow copy of a HashSet
         let clone (set:HashSet<'a>) =
             let nh = HashSet()
             for x in set do
                 nh.Add x |> ignore
             nh
 
+        /// returns a new HashSet of elements that appear in all given HashSets
         let intersectMany (sets:seq<HashSet<'a>>) =
             if Seq.isEmpty sets then
                 HashSet()

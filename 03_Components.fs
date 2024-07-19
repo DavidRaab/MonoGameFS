@@ -22,22 +22,19 @@ So there are three cases of functions
 *)
 
 module Radian =
-    let wrap (x:float32) =
+    let inline wrap (x:float32) =
         LanguagePrimitives.Float32WithMeasure<rad> x
 
     /// A turn describes the angle of a circle between 0 and 1.
     /// So 0.25 or 1/4 is a 1/4 circle or 90 degrees. 0.5 is a half-circle and so on.
-    let fromTurn x =
-        x * System.MathF.Tau
-        * 1.0f<rad>
+    let inline fromTurn x =
+        wrap (x * System.MathF.Tau)
 
-    let fromDeg (degree:float32<deg>) =
-        float32(float degree * System.Math.PI / 180.0)
-        * 1.0f<rad>
+    let inline fromDeg (degree:float<deg>) =
+        wrap (float32 (degree * System.Math.PI / 180.0))
 
-    let toDeg (radiant:float32<rad>) =
-        float32 (float radiant * 180.0 / System.Math.PI)
-        * 1.0f<deg>
+    let inline toDeg (radiant:float<rad>) =
+        wrap (float32 (radiant * 180.0 / System.Math.PI))
 
 module Origin =
     let toVector width height origin =
@@ -58,17 +55,17 @@ module Origin =
 module Transform =
     // Constructors
     let create parent pos dir scale : Transform = {
-        Parent      = parent
-        Position    = pos
-        UpDirection = dir
-        Scale       = scale
+        Parent   = parent
+        Position = pos
+        Rotation = dir
+        Scale    = scale
     }
 
     let empty =
-        create ValueNone Vector2.Zero Vector2.Up Vector2.One
+        create ValueNone Vector2.Zero 0f<rad> Vector2.One
 
     let fromVector pos : Transform =
-        create ValueNone pos Vector2.Up Vector2.One
+        create ValueNone pos 0f<rad> Vector2.One
 
     let fromPosition x y : Transform =
         fromVector (Vector2.create x y)
@@ -82,26 +79,30 @@ module Transform =
         { t with Parent = parent }
 
     // Mutable Properties
-    let setPosition newPos (t:Transform) =
+    let inline setPosition newPos (t:Transform) =
         t.Position <- newPos
         t
 
-    let setDirection newDir (t:Transform) =
-        t.UpDirection <- newDir
+    let inline setRotation rotation (t:Transform) =
+        t.Rotation <- rotation
         t
 
-    let setScale newScale (t:Transform) =
+    let inline setRotationVector vector (t:Transform) =
+        t.Rotation <- Vector2.angle vector
+        t
+
+    let inline setScale newScale (t:Transform) =
         t.Scale <- newScale
         t
 
     /// Adds a vector to the Position
-    let addPosition vec2 (t:Transform) =
+    let inline addPosition vec2 (t:Transform) =
         t.Position <- t.Position + vec2
 
     // TODO: addLocalTransform - that applies the current rotation
 
-    let addRotation rotation (t:Transform) =
-        t.UpDirection <- Vector2.fromAngleRad ((Vector2.angle t.UpDirection) + rotation)
+    let inline addRotation rotation (t:Transform) =
+        t.Rotation <- t.Rotation + rotation
 
 
 module Sprite =
@@ -371,9 +372,9 @@ module Movement =
             ValueNone
 
     /// get .Direction of Component
-    let direction (m:Movement) = m.Direction
+    let inline direction (m:Movement) = m.Direction
     /// get .Rotation of Component
-    let rotation  (m:Movement) = m.Rotation
+    let inline rotation  (m:Movement) = m.Rotation
 
     let withDirection         dir (mov:Movement) = { mov with Direction = ValueSome (Relative dir) }
     let withPosition          pos (mov:Movement) = { mov with Direction = ValueSome (Absolute pos) }
