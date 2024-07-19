@@ -10,9 +10,9 @@ type Entity =
 
 type Transform = {
     Parent: Entity voption
-    mutable Position:  Vector2
-    mutable Direction: Vector2
-    mutable Scale:     Vector2
+    mutable Position:    Vector2
+    mutable UpDirection: Vector2
+    mutable Scale:       Vector2
 }
 
 type Origin =
@@ -63,8 +63,13 @@ type View = {
     mutable Effects:   SpriteEffects
 }
 
+type MovementDirection =
+    | Relative of Vector2
+    | Absolute of position:Vector2 * speed:float32
+
 type Movement = {
-    Direction : Vector2
+    Direction : MovementDirection voption
+    Rotation  : float32<rad>      voption
 }
 
 type Sheet = {

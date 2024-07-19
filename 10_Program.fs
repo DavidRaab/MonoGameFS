@@ -29,16 +29,20 @@ type Model = {
 // Initialize the Game Model
 let initModel assets =
     let arrow = Entity.init (fun e ->
-        e.addTransform (Transform.fromPosition 100f 100f)
+        e.addTransform (
+            Transform.fromPosition 100f 100f
+            // |> Transform.setDirection (Vector2.create 1f -1f)
+        )
         e.addView (
             View.fromSprite assets.Sprites.Arrow FG1
-            |> View.setRotation (Radian.fromTurn 0.25f)
+            // |> View.setRotation (Radian.fromTurn 0.25f)
             |> View.withOrigin Center
         )
-        Systems.Timer.addTimer (Timer.every (sec 0.5) () (fun _ dt ->
+        Systems.Timer.addTimer (Timer.every (sec 0.1) () (fun _ dt ->
             e |> State.Transform.iter (fun tf ->
-                let newD = Vector2.fromAngle ((Vector2.angle tf.Direction) + (Radian.fromTurn 0.125f))
-                Transform.setDirection newD tf |> ignore
+                // let newD = Vector2.fromAngle ((Vector2.angle tf.Direction) + (Radian.fromTurn 0.125f))
+                // Transform.setDirection newD tf |> ignore
+                Transform.addRotation 0.1f<rad> tf
             )
             State ()
         ))
@@ -74,6 +78,19 @@ let initModel assets =
             |> View.setTint Color.Yellow
             |> View.withOrigin Center
         )
+        // Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
+        //     match state with
+        //     | Choice1Of2 right ->
+        //         e |> State.Transform.iter (Transform.addPosition (Vector2.right * 5f))
+        //         if right < 20
+        //         then State (Choice1Of2 (right+1))
+        //         else State (Choice2Of2 (right-1))
+        //     | Choice2Of2 left ->
+        //         e |> State.Transform.iter (Transform.addPosition (Vector2.left * 5f))
+        //         if left > 0
+        //         then State (Choice2Of2 (left-1))
+        //         else State (Choice1Of2 (left+1))
+        // ))
     )
 
     let planet1 = Entity.init (fun e ->
@@ -115,7 +132,7 @@ let initModel assets =
     // Let stars rotate
     Systems.Timer.addTimer (Timer.every (sec 0.03333) 0f<rad> (fun state dt ->
         let rotate t =
-            Transform.setDirection (Vector2.fromAngle state) t |> ignore
+            Transform.setDirection (Vector2.fromAngleRad state) t |> ignore
         List.iter (State.Transform.iter rotate) [sun;planet1;planet2;planet3]
         State (state + Radian.fromDeg 1f<deg>)
     ))
@@ -141,7 +158,12 @@ let initModel assets =
 
     // Origin of the 3000 boxes
     let boxesOrigin = Entity.init (fun e ->
+        e.addView      (View.fromSprite assets.Sprites.WhiteBox BG1 |> View.setTint Color.Black)
         e.addTransform (Transform.fromPosition 0f 0f)
+        e.addMovement {
+            Direction = ValueSome (Relative (Vector2.Right * 50f))
+            Rotation  = ValueSome 1f<rad>
+        }
     )
 
     let boxes = ResizeArray<_>()
@@ -152,21 +174,45 @@ let initModel assets =
             boxes.Add (Entity.init (fun box ->
                 box.addTransform       (
                     Transform.fromPosition (float32 x * 11f) (float32 y * 11f + yOffset)
+                    // |> Transform.setDirection (Vector2.fromAngleDeg 45f<deg>)
                     // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
                     // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
-                    |> Transform.withParent (ValueSome boxesOrigin)
+                    // |> Transform.withParent (ValueSome boxesOrigin)
                 )
                 box.addView            (SheetAnimations.toView BG1 assets.Box)
                 box.addSheetAnimations (SheetAnimations.copy assets.Box)
+                // box |> State.View.map (View.withOrigin Center)
+                box.addMovement {
+                    Direction = ValueNone //ValueSome (Relative (Vector2.Right * 25f))
+                    Rotation  = ValueSome (1f<rad>)
+                }
             ))
 
     // Make the 3000 boxes move
-    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
-        // changes direction of every box every second to a new random direction
-        for box in boxes do
-            State.Movement.add (Movement.create (Vector2.random() * 30f)) box
-        State ()
-    ))
+    let rng = System.Random ()
+    // Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
+    //     // changes direction and rotation of every box every second to a
+    //     // new random direction/rotation
+    //     for box in boxes do
+    //         // 10% of all boxes will move to world position 0,0 with 10px per second
+    //         // all other boxes move in a random direction at 25px per second
+    //         // box |> State.Movement.add {
+    //         //     Direction = ValueSome(
+    //         //         if   rng.NextSingle() < 0.1f
+    //         //         then Absolute (Vector2.Zero,10f)
+    //         //         else Relative (Vector2.randomDirection 25f)
+    //         //     )
+    //         //     Rotation = ValueSome(
+    //         //         Radian.fromDeg (rng.NextSingle() * 60f<deg> - 30f<deg>)
+    //         //     )
+    //         // }
+
+    //         box |> State.Movement.add {
+    //             Direction = ValueSome (Relative (Vector2.right * 25f))
+    //             Rotation  = ValueSome (1f<rad>)
+    //         }
+    //     State ()
+    // ))
 
     // Periodically run Garbage Collector
     Systems.Timer.addTimer (Timer.every (sec 10.0) () (fun _ _ ->
@@ -218,13 +264,13 @@ let inputMapping = {
     Keyboard = [
         Key.Space, IsPressed, Attack
         Key.Space, IsPressed, Attack
-        Key.Left,  IsKeyDown, MoveLeft  Vector2.left
-        Key.Right, IsKeyDown, MoveRight Vector2.right
+        Key.Left,  IsKeyDown, MoveLeft  Vector2.Left
+        Key.Right, IsKeyDown, MoveRight Vector2.Right
         Key.Down,  IsKeyDown, Crouch
-        Key.W,     IsKeyDown, Camera Vector2.up
-        Key.A,     IsKeyDown, Camera Vector2.left
-        Key.S,     IsKeyDown, Camera Vector2.down
-        Key.D,     IsKeyDown, Camera Vector2.right
+        Key.W,     IsKeyDown, Camera Vector2.Up
+        Key.A,     IsKeyDown, Camera Vector2.Left
+        Key.S,     IsKeyDown, Camera Vector2.Down
+        Key.D,     IsKeyDown, Camera Vector2.Right
         Key.Home,  IsKeyDown, CameraHome
         Key.R,     IsKeyDown, ZoomIn
         Key.F,     IsKeyDown, ZoomOut
@@ -232,8 +278,8 @@ let inputMapping = {
     GamePad = {
         Buttons = [
             Button.X,         IsPressed, Attack
-            Button.DPadLeft,  IsKeyDown, MoveLeft  Vector2.left
-            Button.DPadRight, IsKeyDown, MoveRight Vector2.right
+            Button.DPadLeft,  IsKeyDown, MoveLeft  Vector2.Left
+            Button.DPadRight, IsKeyDown, MoveRight Vector2.Right
             Button.DPadDown,  IsKeyDown, Crouch
         ]
         ThumbStick = {
@@ -241,8 +287,8 @@ let inputMapping = {
             Right = Some Camera
         }
         Trigger = {
-            Left  = Some (fun m -> MoveLeft  (Vector2.left  * m))
-            Right = Some (fun m -> MoveRight (Vector2.right * m))
+            Left  = Some (fun m -> MoveLeft  (Vector2.Left  * m))
+            Right = Some (fun m -> MoveRight (Vector2.Right * m))
         }
     }
     Mouse = {
@@ -366,9 +412,9 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         | _                          -> ()
 
     // Rotate BoxesOrigin
-    model.BoxesOrigin |> State.Transform.iter (fun t ->
-        Transform.addRotation (Radian.fromDeg 45f<deg> * fDeltaTime) t
-    )
+    // model.BoxesOrigin |> State.Transform.iter (fun t ->
+    //     Transform.addRotation (Radian.fromDeg 45f<deg> * fDeltaTime) t
+    // )
 
     // Whenever one fixedUpdate runs the Input states should be resetted
     // But the current input information should also be avaiable in draw

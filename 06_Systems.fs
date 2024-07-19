@@ -18,21 +18,21 @@ module View =
     // indicates when a parent has no transform defined and recursion ends.
     let rec calculateTransform (me:Transform) =
         match me.Parent with
-        | ValueNone        -> ValueSome (me.Position,Vector2.angle me.Direction,me.Scale)
+        | ValueNone        -> ValueSome (me.Position,Vector2.angle me.UpDirection,me.Scale)
         | ValueSome parent ->
             match State.Transform.get parent with
             | ValueNone        -> ValueNone
             | ValueSome parent ->
                 (calculateTransform parent) |> ValueOption.map (fun (pPos,pRot,pScale) ->
-                    let rot   = pRot + Vector2.angle me.Direction
+                    let rot   = Vector2.angle me.UpDirection
                     let scale = Vector2.create (pScale.X * me.Scale.X) (pScale.Y * me.Scale.Y)
                     let pos   = Vector2.Transform(
                         me.Position,
                         Matrix.CreateScale(scale.X, scale.Y, 0f)
-                        * Matrix.CreateRotationZ(float32 rot)
-                        * Matrix.CreateTranslation(Vector3(pPos,0f))
+                        * Matrix.CreateRotationZ(float32 pRot)       // rotate by parent position
+                        * Matrix.CreateTranslation(Vector3(pPos,0f)) // translate by parent position
                     )
-                    pos,rot,scale
+                    pos,pRot+rot,scale
                 )
 
     let draw (sb:SpriteBatch) =
@@ -66,7 +66,17 @@ module Movement =
         for entity in Entity.transformAndMovement.GetCache () do
             entity |> State.Movement.iter   (fun mov ->
             entity |> State.Transform.iter  (fun t ->
-                Transform.addPosition (mov.Direction * float32 deltaTime.TotalSeconds) t
+                // FIXME: calculateTransform also must be called here ???
+                match mov.Direction with
+                | ValueNone                        -> ()
+                | ValueSome (Relative dir)         -> Transform.addPosition (dir * float32 deltaTime.TotalSeconds) t
+                | ValueSome (Absolute (pos,speed)) ->
+                    let dir = (Vector2.Normalize (pos - t.Position)) * speed
+                    Transform.addPosition (dir * float32 deltaTime.TotalSeconds) t
+
+                match mov.Rotation with
+                | ValueNone     -> ()
+                | ValueSome rot -> Transform.addRotation (rot * float32 deltaTime.TotalSeconds) t
             ))
 
 module Timer =
@@ -94,7 +104,7 @@ module SheetAnimations =
                 //   Theoretically only must execute when nextSprite was called
                 //   but then the first frame when setting a new animation is skipped.
                 //   Could be mutable or setting a new animation must be revisited.
-                State.View.map (SheetAnimation.setCurrentSprite anim) entity
+                State.View.map (SheetAnimation.withCurrentSprite anim) entity
             )
 
 module Drawing =

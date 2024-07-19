@@ -37,7 +37,7 @@ module Radian =
 
     let toDeg (radiant:float32<rad>) =
         float32 (float radiant * 180.0 / System.Math.PI)
-        * 1.0f<rad>
+        * 1.0f<deg>
 
 module Origin =
     let toVector width height origin =
@@ -58,17 +58,17 @@ module Origin =
 module Transform =
     // Constructors
     let create parent pos dir scale : Transform = {
-        Parent    = parent
-        Position  = pos
-        Direction = dir
-        Scale     = scale
+        Parent      = parent
+        Position    = pos
+        UpDirection = dir
+        Scale       = scale
     }
 
     let empty =
-        create ValueNone Vector2.Zero Vector2.Zero Vector2.One
+        create ValueNone Vector2.Zero Vector2.Up Vector2.One
 
     let fromVector pos : Transform =
-        create ValueNone pos Vector2.right Vector2.One
+        create ValueNone pos Vector2.Up Vector2.One
 
     let fromPosition x y : Transform =
         fromVector (Vector2.create x y)
@@ -87,7 +87,7 @@ module Transform =
         t
 
     let setDirection newDir (t:Transform) =
-        t.Direction <- newDir
+        t.UpDirection <- newDir
         t
 
     let setScale newScale (t:Transform) =
@@ -98,8 +98,10 @@ module Transform =
     let addPosition vec2 (t:Transform) =
         t.Position <- t.Position + vec2
 
+    // TODO: addLocalTransform - that applies the current rotation
+
     let addRotation rotation (t:Transform) =
-        t.Direction <- Vector2.fromAngle ((Vector2.angle t.Direction) + rotation)
+        t.UpDirection <- Vector2.fromAngleRad ((Vector2.angle t.UpDirection) + rotation)
 
 
 module Sprite =
@@ -292,7 +294,7 @@ module SheetAnimation =
                 anim.CurrentSprite <- anim.CurrentSprite + 1
 
     /// Returns a new View with the current Sprite of an SheetAnimation
-    let setCurrentSprite (anim:SheetAnimation) (view:View) =
+    let withCurrentSprite (anim:SheetAnimation) (view:View) =
         { view with Sprite = currentSprite anim }
 
 module SheetAnimations =
@@ -348,14 +350,34 @@ module SheetAnimations =
         |> View.fromSheet layer (anim.CurrentSprite)
 
 module Movement =
-    let create dir =
-        { Direction = dir }
+    let create dir rot = {
+        Direction = dir
+        Rotation  = rot
+    }
+
+    let empty = {
+        Direction = ValueNone
+        Rotation  = ValueNone
+    }
+
+    /// creates a movement containing a direction
+    let fromDirection dir = create (ValueSome (Relative dir))  ValueNone
+    /// creates a movement containing a rotation
+    let fromRotation  rot = create  ValueNone      (ValueSome rot)
+    /// create a movement that moves to position
+    let moveTo position speed =
+        create
+            (ValueSome (Absolute (position,speed)))
+            ValueNone
 
     /// get .Direction of Component
     let direction (m:Movement) = m.Direction
+    /// get .Rotation of Component
+    let rotation  (m:Movement) = m.Rotation
 
-    let createXY x y =
-        create (Vector2(x,y))
+    let withDirection         dir (mov:Movement) = { mov with Direction = ValueSome (Relative dir) }
+    let withPosition          pos (mov:Movement) = { mov with Direction = ValueSome (Absolute pos) }
+    let withRotationPerSecond rot (mov:Movement) = { mov with Rotation  = ValueSome rot            }
 
 module Camera =
     let virtualScale camera =
