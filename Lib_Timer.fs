@@ -63,7 +63,7 @@ module Timer =
                     Pending
         ))
 
-    /// The same as `create` but expects the seconds instead of a `TimeSpan`
+    /// The same as `create` but expects seconds instead of a `TimeSpan`
     let seconds seconds f =
         create (TimeSpan.FromSeconds seconds) f
 
