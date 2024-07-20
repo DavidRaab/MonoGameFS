@@ -55,14 +55,14 @@ type Sprite = {
 }
 
 type View = {
-    Sprite: Sprite
-    Origin: Vector2
-    Layer:  float32
     mutable IsVisible: bool
-    mutable Tint:      Color
+    Sprite: Sprite
     mutable Rotation:  float32<rad>
+    mutable Tint:      Color
     mutable Scale:     Vector2
     mutable Effects:   SpriteEffects
+    Layer:  float32
+    Origin: Vector2
 }
 
 type MovementDirection =

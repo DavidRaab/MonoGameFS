@@ -160,19 +160,19 @@ let initModel assets =
     )
 
     let boxes = ResizeArray<_>()
-    //  3000 boxes without parent -> 2150 fps
-    //  4000 boxes without parent -> 1650 fps
-    //  5000 boxes without parent -> 1250 fps
-    //  6000 boxes without parent -> 1050 fps
-    // 10000 boxes without parent ->  400 fps
+    //  3000 boxes without parent -> 2500 fps
+    //  4000 boxes without parent -> 1850 fps
+    //  5000 boxes without parent -> 1450 fps
+    //  6000 boxes without parent -> 1275 fps
+    // 10000 boxes without parent ->  520 fps
     //
-    //  3000 boxes with parent    -> 1200 fps
-    //  4000 boxes with parent    -> 1000 fps
-    //  5000 boxes with parent    ->  750 fps
-    //  6000 boxes with parent    ->  660 fps
-    // 10000 boxes with parent    ->  280 fps
+    //  3000 boxes with parent    -> 1525 fps
+    //  4000 boxes with parent    -> 1150 fps
+    //  5000 boxes with parent    ->  870 fps
+    //  6000 boxes with parent    ->  750 fps
+    // 10000 boxes with parent    ->  315 fps
     //
-    // Create 3600 Boxes as child of boxesOrigin
+    // Create 3600 Boxes as child of boxesOrigin (1300 fps)
     for x=1 to 60 do
         for y=1 to 60 do
             boxes.Add (Entity.init (fun box ->

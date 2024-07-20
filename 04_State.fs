@@ -10,6 +10,7 @@ type State<'Component>() =
     let state                     = Dictionary<Entity,'Component>()
     let set                       = HashSet<Entity>()
     member this.Entities          = set
+    member this.Data              = state
     member this.OnEntitiesChanged = onEntitiesChanged.Publish
 
     /// adds or overwrite 'Component for Entity
