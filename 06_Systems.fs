@@ -41,7 +41,8 @@ module View =
                 | ValueSome t, ValueSome v -> t,v
                 | _                        -> ()
         |]
-        transformAndView |> Array.sortInPlaceBy (fun (t,v) -> v.Layer)
+
+        transformAndView |> Array.sortInPlaceBy (fun (_,v) -> v.Layer)
         for transform,view in transformAndView do
             if view.IsVisible then
                 match calculateTransform transform with

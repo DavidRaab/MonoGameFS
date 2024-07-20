@@ -173,12 +173,12 @@ module Extensions =
                 | ValueNone   -> ()
                 | ValueSome x -> dic.Add(key, x)
 
-        static member changeValue defaultValue key f (dic:Dictionary<'a,'b>) =
+        static member inline changeValue defaultValue key ([<InlineIfLambda>] f) (dic:Dictionary<'a,'b>) =
             match dic.TryGetValue key with
             | true, value -> dic.[key] <- f value
             | false, _    -> dic.Add(key, f defaultValue)
 
-        static member find key (dic:Dictionary<'a,'b>) =
+        static member inline find key (dic:Dictionary<'a,'b>) =
             match dic.TryGetValue key with
             | true, value -> ValueSome value
             | false, _    -> ValueNone
