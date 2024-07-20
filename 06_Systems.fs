@@ -64,8 +64,7 @@ module View =
 module Movement =
     let update (deltaTime:TimeSpan) =
         let fdt = float32 deltaTime.TotalSeconds
-        for entity in Entity.transformAndMovement.GetCache () do
-            entity |> State.Movement.iter  (fun mov ->
+        for KeyValue(entity,mov) in State.Movement.Data do
             entity |> State.Transform.iter (fun t ->
                 match mov.Direction with
                 | ValueNone                        -> ()
@@ -77,7 +76,7 @@ module Movement =
                 match mov.Rotation with
                 | ValueNone     -> ()
                 | ValueSome rot -> Transform.addRotation (rot * fdt) t
-            ))
+            )
 
 module Timer =
     let mutable state = ResizeArray<Timed<unit>>()
