@@ -5,16 +5,18 @@ open Microsoft.Xna.Framework.Graphics
 
 type TimeSpan = System.TimeSpan
 
+[<Struct>]
 type Entity =
     Entity of int
 
 type Transform = {
     Parent: Entity voption
     mutable Position: Vector2
-    mutable Rotation: float32<rad>
     mutable Scale:    Vector2
+    mutable Rotation: float32<rad>
 }
 
+[<Struct>]
 type Origin =
     | TopLeft
     | Top
