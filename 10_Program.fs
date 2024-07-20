@@ -34,9 +34,8 @@ let initModel assets =
             // |> Transform.setDirection (Vector2.create 1f -1f)
         )
         e.addView (
-            View.fromSprite assets.Sprites.Arrow FG1
+            View.fromSpriteCenter FG1 assets.Sprites.Arrow
             // |> View.setRotation (Radian.fromTurn 0.25f)
-            |> View.withOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (sec 0.1) () (fun _ dt ->
             e |> State.Transform.iter (fun tf ->
@@ -65,18 +64,16 @@ let initModel assets =
             |> Transform.withParent (ValueSome knight)
         )
         e.addView (
-            View.fromSprite assets.Sprites.WhiteBox FG1
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.Aqua
-            |> View.withOrigin Center
         )
     )
 
     let sun = Entity.init (fun e ->
         e.addTransform (Transform.fromPosition 200f 200f)
         e.addView (
-            View.fromSprite assets.Sprites.WhiteBox FG1
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.Yellow
-            |> View.withOrigin Center
         )
         Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
             match state with
@@ -99,9 +96,8 @@ let initModel assets =
             |> Transform.withParent (ValueSome sun)
         )
         e.addView (
-            View.fromSprite assets.Sprites.WhiteBox FG1
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.BlueViolet
-            |> View.withOrigin Center
         )
     )
 
@@ -111,9 +107,8 @@ let initModel assets =
             |> Transform.withParent (ValueSome planet1)
         )
         e.addView (
-            View.fromSprite assets.Sprites.WhiteBox FG1
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.DarkViolet
-            |> View.withOrigin Center
         )
     )
 
@@ -123,15 +118,14 @@ let initModel assets =
             |> Transform.withParent (ValueSome planet2)
         )
         e.addView (
-            View.fromSprite assets.Sprites.WhiteBox FG1
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.Brown
-            |> View.withOrigin Center
         )
     )
 
     // Let stars rotate at 60 fps and 1° each frame
+    let deg1 = Radian.fromDeg 1f<deg>
     Systems.Timer.addTimer (Timer.every (sec (1.0/60.0)) () (fun state dt ->
-        let deg1 = Radian.fromDeg 1.0<deg>
         List.iter (State.Transform.iter (Transform.addRotation deg1)) [sun;planet1;planet2;planet3]
         State ()
     ))
@@ -157,7 +151,7 @@ let initModel assets =
 
     // black box that rotates
     let boxesOrigin = Entity.init (fun e ->
-        e.addView      (View.fromSprite assets.Sprites.WhiteBox BG1 |> View.setTint Color.Black)
+        e.addView      (View.fromSpriteCenter BG1 assets.Sprites.WhiteBox |> View.setTint Color.Black)
         e.addTransform (Transform.fromPosition 0f 0f)
         e.addMovement {
             Direction = ValueNone // ValueSome (Relative (Vector2.Right * 50f))
@@ -212,7 +206,7 @@ let initModel assets =
                     else Relative (Vector2.randomDirection 25f)
                 )
                 Rotation = ValueSome(
-                    Radian.fromDeg (rng.NextDouble() * 60.0<deg> - 30.0<deg>)
+                    Radian.fromDeg (rng.NextSingle() * 60f<deg> - 30f<deg>)
                 )
             }
         State ()

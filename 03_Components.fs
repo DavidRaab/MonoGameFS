@@ -30,14 +30,23 @@ module Radian =
     let inline fromTurn x =
         wrap (x * System.MathF.Tau)
 
-    let inline fromDeg (degree:float<deg>) =
-        wrap (float32 (degree * System.Math.PI / 180.0))
+    let inline fromDeg (degree:float32<deg>) =
+        wrap(degree * System.MathF.PI / 180.0f<deg>)
 
-    let inline toDeg (radiant:float<rad>) =
-        wrap (float32 (radiant * 180.0 / System.Math.PI))
+    let inline toDeg (radiant:float32<rad>) =
+        (float32 radiant) * 180.0f<deg> / System.MathF.PI
 
 module Origin =
-    let toVector width height origin =
+    /// <summary>
+    /// Expects a `width`, `height` and an `origin`. Returns a `Vector2` that
+    /// represents the Position of the choosen Origin.
+    ///
+    /// <code lang="fsharp">
+    /// Origin.toPosition 100f 100f Center = Vector2( 50f,50f)
+    /// Origin.toPosition 100f 100f Right  = Vector2(100f,50f)
+    /// </code>
+    /// </summary>
+    let toPosition width height origin =
         let x,y =
             match origin with
             | TopLeft        ->         0f,          0f
@@ -53,25 +62,41 @@ module Origin =
         Vector2(x,y)
 
 module Transform =
+    /// A default constructor that basically does nothing. It expects a record
+    /// and returns it immediately. The whole purpose of this is because sometimes
+    /// type-inference on records can break. By writing `Transform.from { ... }`
+    /// its like an additional type declaration. The Compiler/IDE immediately knows
+    /// which record you wanna create and which fields are needed. Also reads
+    /// nicely in written code.
+    let inline from (t:Transform) = t
+
     // Constructors
-    let create parent pos dir scale : Transform = {
+    let create parent pos rot scale = from {
         Parent   = parent
         Position = pos
-        Rotation = dir
+        Rotation = rot
         Scale    = scale
     }
 
-    let empty =
-        create ValueNone Vector2.Zero 0f<rad> Vector2.One
+    let empty = from {
+        Parent   = ValueNone
+        Position = Vector2.Zero
+        Rotation = 0f<rad>
+        Scale    = Vector2.One
+    }
 
-    let fromVector pos : Transform =
-        create ValueNone pos 0f<rad> Vector2.One
+    /// Creates a Transform with the supplied vector2
+    let inline fromVector pos   = { empty with Position = pos }
 
-    let fromPosition x y : Transform =
-        fromVector (Vector2.create x y)
+    /// Creates a Transform with a position specified as x,y coordinates
+    let inline fromPosition x y = { empty with Position = Vector2.create x y }
 
-    let createPositionDirection pos dir : Transform =
-        create ValueNone pos dir Vector2.One
+    /// Creates a Transform with Position and Rotation
+    let inline fromPosRot pos rot = {
+        empty with
+            Position = pos
+            Rotation = rot
+    }
 
     // Immutable Properties
     /// Creates a new Transform with the provided Parent Transform.
@@ -101,11 +126,18 @@ module Transform =
 
     // TODO: addLocalTransform - that applies the current rotation
 
+    /// Adds rotation to Transform specified in radiant
     let inline addRotation rotation (t:Transform) =
         t.Rotation <- t.Rotation + rotation
 
+    /// Adds rotation to Transform specified in degree
+    let inline addRotationDeg rot (t:Transform) =
+        t.Rotation <- t.Rotation + (Radian.fromDeg rot)
+
 
 module Sprite =
+    let inline from (s:Sprite) = s
+
     let create tex rect = {
         Texture = tex
         SrcRect = rect
@@ -116,16 +148,16 @@ module Sprite =
         SrcRect = Rectangle(0,0,tex.Width,tex.Height)
     }
 
-    let rect    sprite = sprite.SrcRect
-    let texture sprite = sprite.Texture
-    let width   sprite = sprite.SrcRect.Width
-    let height  sprite = sprite.SrcRect.Height
+    let inline rect    sprite = sprite.SrcRect
+    let inline texture sprite = sprite.Texture
+    let inline width   sprite = sprite.SrcRect.Width
+    let inline height  sprite = sprite.SrcRect.Height
 
 module View =
     // Turns a Layer into a number. When Drawing the sprites all sprites
     // are sorted by this number. This way we can emulate layers. On the same
     // layer no drawing order can be preserved.
-    let layerToFloat layer =
+    let inline layerToFloat layer =
         match layer with
             | BG2 -> 0.1f
             | BG1 -> 0.2f
@@ -135,18 +167,25 @@ module View =
             | UI1 -> 0.6f
 
     // Constructors
+    let inline from (v:View) = v
 
     /// Generates a View
-    let fromSprite sprite layer = {
+    let fromSprite origin layer sprite = {
         Sprite    = sprite
         IsVisible = true
         Tint      = Color.White
         Rotation  = 0.0f<rad>
-        Origin    = Vector2.Zero
+        Origin    = Origin.toPosition (float32 sprite.SrcRect.Width) (float32 sprite.SrcRect.Height) origin
         Scale     = Vector2.One
         Effects   = SpriteEffects.None
         Layer     = layerToFloat layer
     }
+
+    let fromSpriteTop    = fromSprite Top
+    let fromSpriteRight  = fromSprite Right
+    let fromSpriteBottom = fromSprite Bottom
+    let fromSpriteLeft   = fromSprite Left
+    let fromSpriteCenter = fromSprite Center
 
     /// Generates a View from a Sheet by using the selected Sprite
     let fromSheet layer index sheet = {
@@ -171,7 +210,7 @@ module View =
     let withOrigin name (view:View) =
         let width  = float32 view.Sprite.SrcRect.Width
         let height = float32 view.Sprite.SrcRect.Height
-        let origin = Origin.toVector width height name
+        let origin = Origin.toPosition width height name
         { view with Origin = origin }
 
     // Mutable Properties
@@ -282,7 +321,7 @@ module SheetAnimation =
         anim.ElapsedTime   <- TimeSpan.Zero
 
     /// Returns the current Sprite in an animation
-    let currentSprite anim =
+    let inline currentSprite anim =
         anim.Sheet.Sprites.[anim.CurrentSprite]
 
     /// Advance the animation to the next Sprite
@@ -351,9 +390,11 @@ module SheetAnimations =
         |> View.fromSheet layer (anim.CurrentSprite)
 
 module Movement =
-    let create dir rot = {
-        Direction = dir
-        Rotation  = rot
+    let inline from (x:Movement) = x
+
+    let inline create dir rot = {
+        Direction = ValueSome dir
+        Rotation  = ValueSome rot
     }
 
     let empty = {
@@ -362,14 +403,15 @@ module Movement =
     }
 
     /// creates a movement containing a direction
-    let fromDirection dir = create (ValueSome (Relative dir))  ValueNone
+    let inline fromDirection dir = from { Direction = (ValueSome (Relative dir)); Rotation = ValueNone }
     /// creates a movement containing a rotation
-    let fromRotation  rot = create  ValueNone      (ValueSome rot)
+    let inline fromRotation  rot = from { Direction = ValueNone; Rotation = (ValueSome rot) }
+
     /// create a movement that moves to position
-    let moveTo position speed =
-        create
-            (ValueSome (Absolute (position,speed)))
-            ValueNone
+    let moveTo position speed = from {
+        Direction = (ValueSome (Absolute (position,speed)))
+        Rotation  =  ValueNone
+    }
 
     /// get .Direction of Component
     let inline direction (m:Movement) = m.Direction
@@ -388,7 +430,7 @@ module Camera =
     /// Calculates and returns the Matrix of the Camera. This ignores the Matrix field of
     /// the record. It is used to calculate the Matrix to reset the field.
     let calculateMatrix camera =
-        let origin = Origin.toVector (float32 camera.VirtualWidth) (float32 camera.VirtualHeight) camera.Origin
+        let origin = Origin.toPosition (float32 camera.VirtualWidth) (float32 camera.VirtualHeight) camera.Origin
 
         Matrix.CreateScale         (virtualScale camera)
         * Matrix.CreateTranslation (Vector3(-camera.Position , 0f))
