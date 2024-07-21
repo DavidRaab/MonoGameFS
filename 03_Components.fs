@@ -136,12 +136,7 @@ module Transform =
 
 
 module Sprite =
-    let inline from (s:Sprite) = s
-
-    let create tex rect = {
-        Texture = tex
-        SrcRect = rect
-    }
+    let create (sprite:Sprite) = sprite
 
     let fromTexture tex = {
         Texture = tex
@@ -152,6 +147,22 @@ module Sprite =
     let inline texture sprite = sprite.Texture
     let inline width   sprite = sprite.SrcRect.Width
     let inline height  sprite = sprite.SrcRect.Height
+
+    /// Generates a Sprite array from a Texture2D
+    let fromColumnsRows columns rows (texture:Texture2D) : Sprite array =
+        let width   = texture.Width  / columns
+        let height  = texture.Height / rows
+        let sprites = [|
+            for row=0 to rows-1 do
+            for col=0 to columns-1 do
+                yield create {
+                    Texture = texture
+                    SrcRect = Rectangle(col*width, row*height, width, height)
+                }
+        |]
+        if sprites.Length = 0 then
+            failwith "Sheet with 0 Sprites"
+        sprites
 
 module View =
     // Turns a Layer into a number. When Drawing the sprites all sprites
@@ -167,7 +178,7 @@ module View =
             | UI1 -> 0.6f
 
     // Constructors
-    let inline from (v:View) = v
+    let inline create (v:View) = v
 
     /// Generates a View
     let fromSprite origin layer sprite = {
@@ -187,7 +198,7 @@ module View =
     let fromSpriteCenter = fromSprite Center
 
     /// Generates a View from a Sheet by using the selected Sprite
-    let fromSheet layer index sheet = {
+    let fromSheet layer index (sheet:Sheet) : View = {
         Sprite =
             Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
                 eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
@@ -225,7 +236,7 @@ module View =
         view.Tint <- tint
         view
 
-    let flipHorizontal b view =
+    let flipHorizontal b (view:View) =
         match b with
         | true  -> view.Effects <- SpriteEffects.FlipHorizontally
         | false -> view.Effects <- SpriteEffects.None
@@ -235,162 +246,202 @@ module View =
         view
 
 module Sheet =
-    /// Returns a sprite from a sheet
-    let sprite index sheet =
-        Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
-            eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
-                index (sheet.Sprites.Length-1) (stackTrace 1)
-            if   sheet.Sprites.Length > 0
-            then Array.get sheet.Sprites 0
-            else failwith "Sheet has 0 Sprites"
-        )
+    let create data : Sheet =
+        if data.Sprites.Length = 0 then
+            failwithf "Cannot create Sheet. Must at least contain one Sprite."
+        data
 
-    let fromWidthHeight width height (texture:Texture2D) =
-        let columns = texture.Width  / width
-        let rows    = texture.Height / height
-        let sprites = [|
-            for row=0 to rows-1 do
-            for col=0 to columns-1 do
-                yield Sprite.create texture (Rectangle(col*width, row*height, width, height))
-        |]
-        if sprites.Length = 0 then
-            failwith "Sheet with 0 Sprites"
-        { Sprites = sprites }
+    let sprite idx (sheet:Sheet) : Sprite voption =
+        if idx < sheet.Sprites.Length
+        then ValueSome sheet.Sprites.[idx]
+        else ValueNone
 
-    let fromColumnsRows columns rows (texture:Texture2D) =
-        let width   = texture.Width  / columns
-        let height  = texture.Height / rows
-        let sprites = [|
-            for row=0 to rows-1 do
-            for col=0 to columns-1 do
-                yield Sprite.create texture (Rectangle(col*width, row*height, width, height))
-        |]
-        if sprites.Length = 0 then
-            failwith "Sheet with 0 Sprites"
-        { Sprites = sprites }
+    let inline length (sheet:Sheet) : int =
+        sheet.Sprites.Length
 
-    /// Generates a new Sheet from an existing Sheet by selecting the sprites specified by `idxs`
-    let fromSheet idxs sheet = {
-        Sprites = [|
-            for idx in idxs do
-                yield sprite idx sheet
-        |]
+    let inline duration (sheet:Sheet) =
+        sheet.FrameDuration * (float sheet.Sprites.Length)
+
+module Sheets =
+    let create data : Sheets =
+        if not (Map.containsKey data.Default data.Sheets) then
+            failwithf "Cannot create Sheets. Default Sheet '%s' does not exists." data.Default
+        if data.Sheets.Count = 0 then
+            failwithf "Cannot create Sheets. Sheets must have at least one item."
+        data
+
+    let addSheet name (sheet: Sheet) sheets : Sheets = {
+        sheets with
+            Sheets = (Map.add name sheet sheets.Sheets)
     }
 
-    /// Generates a Sheet from a single texture that will contain a single sprite
-    let fromTexture (texture:Texture2D) = {
-        Sprites = [|
-            Sprite.create texture (Rectangle(0,0,texture.Width, texture.Height))
-        |]
-    }
+    let inline getSheet name (sheets:Sheets) : Sheet option =
+        Map.tryFind name sheets.Sheets
 
-    /// Generates a Sheet by directly passing the individual sprites
-    let fromSprites sprites = {
-        Sprites = Array.ofSeq sprites
-    }
+    let inline getSheetExn name (sheets:Sheets) : Sheet =
+        Map.find name sheets.Sheets
+
+    /// Creates a View from the currently set sprite sheet
+    let createView layer origin (sheets:Sheets) : View =
+        let sprite = sheets.Sheets.[sheets.Default].Sprites.[0]
+        View.create {
+            Sprite   = sprite
+            Rotation = 0f<rad>
+            Tint     = Color.White
+            Scale    = Vector2.One
+            Effects  = SpriteEffects.None
+            Layer    = View.layerToFloat layer
+            Origin   = Origin.toPosition (float32 sprite.SrcRect.Width) (float32 sprite.SrcRect.Height) origin
+        }
+
+// module Sheet =
+//     /// Returns a sprite from a sheet
+//     let sprite index sheet =
+//         Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
+//             eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
+//                 index (sheet.Sprites.Length-1) (stackTrace 1)
+//             if   sheet.Sprites.Length > 0
+//             then Array.get sheet.Sprites 0
+//             else failwith "Sheet has 0 Sprites"
+//         )
+
+//     let fromWidthHeight width height (texture:Texture2D) =
+//         let columns = texture.Width  / width
+//         let rows    = texture.Height / height
+//         let sprites = [|
+//             for row=0 to rows-1 do
+//             for col=0 to columns-1 do
+//                 yield Sprite.create texture (Rectangle(col*width, row*height, width, height))
+//         |]
+//         if sprites.Length = 0 then
+//             failwith "Sheet with 0 Sprites"
+//         { Sprites = sprites }
+
+//     let fromColumnsRows columns rows (texture:Texture2D) =
+//         let width   = texture.Width  / columns
+//         let height  = texture.Height / rows
+//         let sprites = [|
+//             for row=0 to rows-1 do
+//             for col=0 to columns-1 do
+//                 yield Sprite.create texture (Rectangle(col*width, row*height, width, height))
+//         |]
+//         if sprites.Length = 0 then
+//             failwith "Sheet with 0 Sprites"
+//         { Sprites = sprites }
+
+//     /// Generates a new Sheet from an existing Sheet by selecting the sprites specified by `idxs`
+//     let fromSheet idxs sheet = {
+//         Sprites = [|
+//             for idx in idxs do
+//                 yield sprite idx sheet
+//         |]
+//     }
+
+//     /// Generates a Sheet from a single texture that will contain a single sprite
+//     let fromTexture (texture:Texture2D) = {
+//         Sprites = [|
+//             Sprite.create texture (Rectangle(0,0,texture.Width, texture.Height))
+//         |]
+//     }
+
+//     /// Generates a Sheet by directly passing the individual sprites
+//     let fromSprites sprites = {
+//         Sprites = Array.ofSeq sprites
+//     }
 
 
-module SheetAnimation =
-    let create (duration:int<ms>) isLoop sheet = {
-        Sheet         = sheet
+module Animation =
+    let from (data:Animation) = data
+
+    let create sheets = from {
+        Sheets        = sheets
+        CurrentSheet  = sheets.Sheets.[sheets.Default] // can throw exception
         CurrentSprite = 0
-        IsLoop        = isLoop
         ElapsedTime   = TimeSpan.Zero
-        Duration      = TimeSpan.FromMilliseconds (float (duration / 1<ms>))
     }
 
-    // FIXME: See SheetAnimation.copy
-    let copy sheet = {
-        Sheet         = sheet.Sheet
-        CurrentSprite = sheet.CurrentSprite
-        IsLoop        = sheet.IsLoop
-        ElapsedTime   = sheet.ElapsedTime
-        Duration      = sheet.Duration
-    }
+    let sheets (animation:Animation) : Sheets = animation.Sheets
 
-    let sheet anim =
-        anim.Sheet
-
-    let fullDuration anim =
-        anim.Duration * float anim.Sheet.Sprites.Length
-
-    let reset anim =
-        anim.CurrentSprite <- 0
-        anim.ElapsedTime   <- TimeSpan.Zero
+    let reset (animation:Animation) : unit =
+        animation.CurrentSprite <- 0
+        animation.ElapsedTime   <- TimeSpan.Zero
 
     /// Returns the current Sprite in an animation
-    let inline currentSprite anim =
-        anim.Sheet.Sprites.[anim.CurrentSprite]
+    let inline currentSprite anim : Sprite voption =
+        Sheet.sprite anim.CurrentSprite anim.CurrentSheet
 
     /// Advance the animation to the next Sprite
     let nextSprite anim =
-        let maxSprite = anim.Sheet.Sprites.Length
-        if anim.IsLoop then
+        let sheet     = anim.CurrentSheet
+        let maxSprite = Sheet.length sheet
+        if sheet.IsLoop then
             anim.CurrentSprite <- (anim.CurrentSprite + 1) % maxSprite
         else
             if anim.CurrentSprite < maxSprite-1 then
                 anim.CurrentSprite <- anim.CurrentSprite + 1
 
-    /// Returns a new View with the current Sprite of an SheetAnimation
-    let withCurrentSprite (anim:SheetAnimation) (view:View) =
-        { view with Sprite = currentSprite anim }
+    /// Updates the View to the current Sprite
+    let updateView (anim:Animation) (view:View) : unit =
+        match currentSprite anim with
+        | ValueSome(sprite) -> view.Sprite <- sprite
+        | ValueNone         -> ()
 
-module SheetAnimations =
-    let create active animations =
-        let animations = Map animations
-        let validAnims = Map.keys animations
-        if Seq.contains active validAnims then {
-            Animations = animations
-            Active     = active
-        }
-        else
-            failwithf "Cannot set active Animation to \"%s\" valid animations are %A" active validAnims
+    /// Switch to another sheet animation
+    let switchAnimation name (anim:Animation) : unit =
+        match Sheets.getSheet name anim.Sheets with
+        | Some sheet ->
+            anim.CurrentSheet  <- sheet
+            anim.CurrentSprite <- 0
+            anim.ElapsedTime   <- TimeSpan.Zero
+        | None ->
+            let validAnims = System.String.Join(',', Map.keys anim.Sheets.Sheets)
+            failwithf "Cannot switch Animation to \"%s\" valid animation are %s" name validAnims
 
-    // FIXME: SheetAnimations must be separated into two components. One Component
-    //        just describes the Animation and is immutable. It does not contain
-    //        any data for the running animation.
-    //        Then from the SheetAnimations there is a mutable structure that contains
-    //        the current sprite for the given entity.
-    //        Currently I just copy SheetAnimations to a new Structure for an easy fix.
-    let copy sheets = {
-        Animations = sheets.Animations |> Map.map (fun name sheet -> SheetAnimation.copy sheet)
-        Active     = sheets.Active
-    }
+// module SheetAnimations =
+//     let create active animations =
+//         let animations = Map animations
+//         let validAnims = Map.keys animations
+//         if Seq.contains active validAnims then {
+//             Animations = animations
+//             Active     = active
+//         }
+//         else
+//             failwithf "Cannot set active Animation to \"%s\" valid animations are %A" active validAnims
 
-    let hasAnimation str anims =
-        Seq.contains str anims.Animations.Keys
+//     let hasAnimation str anims =
+//         Seq.contains str anims.Animations.Keys
 
-    let getAnimationsNames anims = [
-        for animationName in anims.Animations.Keys do
-            yield animationName
-    ]
+//     let getAnimationsNames anims = [
+//         for animationName in anims.Animations.Keys do
+//             yield animationName
+//     ]
 
-    let getAnimationExn name anims =
-        match Map.tryFind name anims.Animations with
-        | Some anim -> anim
-        | None      -> failwithf "Cannot find animation \"%s\" available animations %A" name (getAnimationsNames anims)
+//     let getAnimationExn name anims =
+//         match Map.tryFind name anims.Animations with
+//         | Some anim -> anim
+//         | None      -> failwithf "Cannot find animation \"%s\" available animations %A" name (getAnimationsNames anims)
 
-    let getCurrentAnimation anims =
-        getAnimationExn anims.Active anims
+//     let getCurrentAnimation anims =
+//         getAnimationExn anims.Active anims
 
-    let setAnimation active anims =
-        if hasAnimation active anims then
-            if anims.Active <> active then
-                SheetAnimation.reset (getCurrentAnimation anims)
-                anims.Active <- active
-        else
-            eprintfn "No Animation \"%s\" available Animations %A at\n%s"
-                active (getAnimationsNames anims) (stackTrace 1)
+//     let setAnimation active anims =
+//         if hasAnimation active anims then
+//             if anims.Active <> active then
+//                 SheetAnimation.reset (getCurrentAnimation anims)
+//                 anims.Active <- active
+//         else
+//             eprintfn "No Animation \"%s\" available Animations %A at\n%s"
+//                 active (getAnimationsNames anims) (stackTrace 1)
 
-    let toView layer anims =
-        let anim = getCurrentAnimation anims
-        SheetAnimation.sheet anim
-        |> View.fromSheet layer (anim.CurrentSprite)
+//     let toView layer anims =
+//         let anim = getCurrentAnimation anims
+//         SheetAnimation.sheet anim
+//         |> View.fromSheet layer (anim.CurrentSprite)
 
 module Movement =
     let inline from (x:Movement) = x
 
-    let inline create dir rot = {
+    let inline create dir rot : Movement = {
         Direction = ValueSome dir
         Rotation  = ValueSome rot
     }
@@ -421,7 +472,7 @@ module Movement =
     let withRotationPerSecond rot (mov:Movement) = { mov with Rotation  = ValueSome rot            }
 
 module Camera =
-    let virtualScale camera =
+    let virtualScale (camera:Camera) : Vector3 =
         let scale = float32 camera.Viewport.Width / float32 camera.VirtualWidth
         Vector3(scale,scale,1f)
 

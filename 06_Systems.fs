@@ -89,19 +89,30 @@ module Timer =
             | Pending    -> ()
             | Finished _ -> state.RemoveAt(idx)
 
-module SheetAnimations =
+module Animations =
     let update (deltaTime: TimeSpan) =
-        for KeyValue(entity,anims) in State.SheetAnimations.Data do
-            let anim = SheetAnimations.getCurrentAnimation anims
+        for KeyValue(entity,anim) in State.Animation.Data do
             anim.ElapsedTime <- anim.ElapsedTime + deltaTime
-            if anim.ElapsedTime > anim.Duration then
-                anim.ElapsedTime <- anim.ElapsedTime - anim.Duration
-                SheetAnimation.nextSprite anim
-            // TODO: Optimization
-            //   Theoretically only must execute when nextSprite was called
-            //   but then the first frame when setting a new animation is skipped.
-            //   Could be mutable or setting a new animation must be revisited.
-            State.View.map (SheetAnimation.withCurrentSprite anim) entity
+            if anim.ElapsedTime > anim.CurrentSheet.FrameDuration then
+                anim.ElapsedTime <- anim.ElapsedTime - anim.CurrentSheet.FrameDuration
+                Animation.nextSprite anim
+                entity |> State.View.iter (fun view ->
+                    match Animation.currentSprite anim with
+                    | ValueSome sprite -> view.Sprite <- sprite
+                    | ValueNone        -> printfn "Woop"
+                )
+
+        // for KeyValue(entity,anims) in State.SheetAnimations.Data do
+        //     let anim = SheetAnimations.getCurrentAnimation anims
+        //     anim.ElapsedTime <- anim.ElapsedTime + deltaTime
+        //     if anim.ElapsedTime > anim.Duration then
+        //         anim.ElapsedTime <- anim.ElapsedTime - anim.Duration
+        //         SheetAnimation.nextSprite anim
+        //     // TODO: Optimization
+        //     //   Theoretically only must execute when nextSprite was called
+        //     //   but then the first frame when setting a new animation is skipped.
+        //     //   Could be mutable or setting a new animation must be revisited.
+        //     State.View.map (SheetAnimation.withCurrentSprite anim) entity
 
 module Drawing =
     let mousePosition (sb:SpriteBatch) (font:SpriteFont) position whereToDraw =

@@ -77,20 +77,20 @@ module Entity =
 [<AutoOpen>]
 module EntityExtension =
     type Entity with
-        member this.addTransform t           = State.Transform.add t this
-        member this.deleteTransform ()       = State.Transform.delete this
-        member entity.addView view           = State.View.add entity true view
-        member this.deleteView ()            = State.View.remove this
-        member this.addMovement mov          = State.Movement.add mov this
-        member this.deleteMovement ()        = State.Movement.delete this
-        member this.addSheetAnimations anim  = State.SheetAnimations.add anim this
-        member this.deleteSheetAnimations () = State.SheetAnimations.delete this
-        member this.setAnimation name =
-            this |> State.SheetAnimations.iter (fun anims ->
-                SheetAnimations.setAnimation name anims
+        member entity.addTransform t     = State.Transform.add t entity
+        member entity.deleteTransform () = State.Transform.delete entity
+        member entity.addView view       = State.View.add entity true view
+        member entity.deleteView ()      = State.View.remove entity
+        member entity.addMovement mov    = State.Movement.add mov entity
+        member entity.deleteMovement ()  = State.Movement.delete entity
+        member entity.addAnimation anim  = State.Animation.add anim entity
+        member entity.deleteAnimation () = State.Animation.delete entity
+        member entity.setAnimation name =
+            entity |> State.Animation.iter (fun anim ->
+                Animation.switchAnimation name anim
             )
-        member this.getAnimationExn name =
-            match State.SheetAnimations.get this with
-            | ValueSome anims -> SheetAnimations.getAnimationExn name anims
-            | ValueNone       -> failwithf "%A has no SheetAnimations" this
+        member entity.getSheetExn name : Sheet =
+            match State.Animation.get entity with
+            | ValueSome anim -> anim.Sheets.Sheets.[name]
+            | ValueNone      -> failwithf "%A has no SheetAnimations" entity
 

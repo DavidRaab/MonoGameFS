@@ -38,20 +38,20 @@ let boxes assets =
     )
 
     let boxes = ResizeArray<_>()
-    //     0 boxes                -> 12000 fps
+    //     0 boxes                -> 12500 fps
     //
     //  3000 boxes without parent -> 2500 fps
-    //  4000 boxes without parent -> 1850 fps
-    //  5000 boxes without parent -> 1450 fps
-    //  6000 boxes without parent -> 1200 fps
-    // 10000 boxes without parent ->  510 fps
+    //  4000 boxes without parent -> 1950 fps
+    //  5000 boxes without parent -> 1550 fps
+    //  6000 boxes without parent -> 1300 fps
+    // 10000 boxes without parent ->  600 fps
     //
-    //  3000 boxes with parent    -> 1525 fps
+    //  3000 boxes with parent    -> 1550 fps
     //  4000 boxes with parent    -> 1150 fps
-    //  5000 boxes with parent    ->  870 fps
+    //  5000 boxes with parent    ->  925 fps
     //  6000 boxes with parent    ->  750 fps
-    // 10000 boxes with parent    ->  315 fps
-    // Create 3600 Boxes as child of boxesOrigin (1150 fps)
+    // 10000 boxes with parent    ->  350 fps
+    // Create 3600 Boxes as child of boxesOrigin (1320 fps)
     for x=1 to 60 do
         for y=1 to 60 do
             boxes.Add (Entity.init (fun box ->
@@ -61,8 +61,8 @@ let boxes assets =
                     // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
                     |> Transform.withParent (ValueSome boxesOrigin)
                 )
-                box.addView            (SheetAnimations.toView BG1 assets.Box)
-                box.addSheetAnimations (SheetAnimations.copy assets.Box)
+                box.addView      (Sheets.createView BG1 Center assets.Box)
+                box.addAnimation (Animation.create assets.Box)
                 // box |> State.View.map (View.withOrigin Center)
                 box.addMovement {
                     Direction = ValueNone //ValueSome (Relative (Vector2.Right * 25f))
@@ -109,13 +109,13 @@ let boxes assets =
     // called. If visibility stays the same then showing half of the boxes
     // nearly has same performance as showing all boxes without anyone being
     // deactivated
-    let rng2 = System.Random ()
-    Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
-        for i=1 to 250 do
-            let ridx = rng2.Next(boxes.Count)
-            State.View.switchVisibility boxes.[ridx]
-        State ()
-    ))
+    // let rng2 = System.Random ()
+    // Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
+    //     for i=1 to 250 do
+    //         let ridx = rng2.Next(boxes.Count)
+    //         State.View.switchVisibility boxes.[ridx]
+    //     State ()
+    // ))
 
     ()
 
@@ -145,11 +145,10 @@ let initModel assets =
     let knight = Entity.init (fun e ->
         e.addTransform (Transform.fromPosition 320f 200f)
         e.addView (
-            SheetAnimations.toView FG1 assets.Knight
+            Sheets.createView FG1 Top assets.Knight
             |> View.setScale (Vector2.create 2f 2f)
-            |> View.withOrigin Top
         )
-        e.addSheetAnimations (assets.Knight)
+        e.addAnimation (Animation.create assets.Knight)
     )
 
     // Creates a box that is a parent of the knight and moves when Knight moves
@@ -339,9 +338,9 @@ let mutable resetInput = false
 let fixedUpdateTiming = sec (1.0 / 60.0)
 let fixedUpdate model (deltaTime:TimeSpan) =
     let fDeltaTime = float32 deltaTime.TotalSeconds
-    Systems.Timer.update           deltaTime
-    Systems.Movement.update        deltaTime
-    Systems.SheetAnimations.update deltaTime
+    Systems.Timer.update      deltaTime
+    Systems.Movement.update   deltaTime
+    Systems.Animations.update deltaTime
 
     // Get all Input of user and maps them into actions
     let actions = FInput.mapInput State.camera inputMapping
@@ -379,7 +378,7 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     let nextKnightState previousState =
         // helper-function that describes how an action is mapped to a knightState
         let action2state = function
-            | Attack      -> IsAttack (TimeSpan.Zero, SheetAnimation.fullDuration (model.Knight.getAnimationExn "Attack"))
+            | Attack      -> IsAttack (TimeSpan.Zero, Sheet.duration (model.Knight.getSheetExn "Attack"))
             | MoveLeft  v -> IsLeft v
             | MoveRight v -> IsRight v
             | Crouch      -> IsCrouch
@@ -393,23 +392,27 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         // correct animation and moving the character
         let setState state =
             match state with
-            | IsAttack (e,d) ->
-                model.Knight.setAnimation "Attack"; IsAttack (e,d)
-            | IsCrouch ->
-                model.Knight.setAnimation "Crouch"; IsCrouch
+            | IsAttack (e,d) -> IsAttack (e,d)
+            | IsCrouch       -> IsCrouch
             | IsLeft v       ->
-                model.Knight.setAnimation "Run";
                 model.Knight |> State.View.iter      (View.flipHorizontal true)
                 model.Knight |> State.Transform.iter (Transform.addPosition (v * 300f * fDeltaTime))
                 IsLeft v
             | IsRight v     ->
-                model.Knight.setAnimation "Run";
                 model.Knight |> State.View.iter      (View.flipHorizontal false)
                 model.Knight |> State.Transform.iter (Transform.addPosition (v * 300f * fDeltaTime))
                 IsRight v
-            | IsIdle ->
-                model.Knight.setAnimation "Idle";
-                IsIdle
+            | IsIdle -> IsIdle
+
+        let setAnimation state =
+            let anim =
+                match state with
+                | IsAttack (_,_) -> "Attack"
+                | IsCrouch       -> "Crouch"
+                | IsLeft _       -> "Run"
+                | IsRight _      -> "Run"
+                | IsIdle         -> "Idle"
+            model.Knight.setAnimation anim
 
         // 1. Find the next state by mapping every action to a state, and get the one with the highest priority.
         //    For example, when user hits Attack button, it has higher priority as moving
@@ -424,9 +427,15 @@ let fixedUpdate model (deltaTime:TimeSpan) =
         | IsAttack (e,d), wantedState ->
             let elapsed = e + deltaTime
             if elapsed >= d
-            then setState wantedState
+            then
+                setAnimation wantedState
+                setState wantedState
             else IsAttack (elapsed,d)
-        | _ , wanted  -> setState wanted
+        | previous, wanted  ->
+            // When state changed we need to switch animation
+            if previous <> wanted then
+                setAnimation wanted
+            setState wanted
 
     // Compute new Knight State
     knightState <- nextKnightState knightState

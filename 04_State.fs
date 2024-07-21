@@ -67,10 +67,10 @@ module State =
     let mutable camera   = Unchecked.defaultof<Camera>
     let mutable uiCamera = Unchecked.defaultof<Camera>
     let Transform        = State<Transform>()
-    // let View             = State<View>()
     let Movement         = State<Movement>()
-    let SheetAnimations  = State<SheetAnimations>()
+    let Animation        = State<Animation>()
 
+    // let View          = State<View>()
     module View =
         let visible = Dictionary<Entity,View>()
         let hidden  = Dictionary<Entity,View>()

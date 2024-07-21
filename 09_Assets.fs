@@ -8,8 +8,8 @@ open Microsoft.Xna.Framework.Graphics
 type Assets = {
     Font:    Fonts
     Sprites: Sprites
-    Knight:  SheetAnimations
-    Box:     SheetAnimations
+    Knight:  Sheets
+    Box:     Sheets
 }
 and Sprites = {
     Pixel:    Sprite
@@ -22,6 +22,9 @@ and Fonts = {
 }
 
 module Assets =
+    let inline ms time : TimeSpan =
+        TimeSpan.FromMilliseconds(time)
+
     let load load loadFont texture = {
         Font = {
             Default = loadFont "Font"
@@ -32,17 +35,25 @@ module Assets =
             WhiteBox = Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.White))
             Arrow    = Sprite.fromTexture (load "arrow")
         }
-        Knight = SheetAnimations.create "Idle" [
-            "Idle"   => SheetAnimation.create 100<ms> true  (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Idle"))
-            "Attack" => SheetAnimation.create  50<ms> false (Sheet.fromColumnsRows  4 1 (load "FreeKnight/Attack"))
-            "Run"    => SheetAnimation.create 100<ms> true  (Sheet.fromColumnsRows 10 1 (load "FreeKnight/Run"))
-            "Crouch" => SheetAnimation.create   0<ms> false (Sheet.fromTexture          (load "FreeKnight/Crouch"))
-        ]
-        Box = SheetAnimations.create "Default" [
-            "Default" => SheetAnimation.create 250<ms> true (Sheet.fromSprites [
-                Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.White))
-                Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.Red))
-                Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.Blue))
-            ])
-        ]
+        Knight = Sheets.create {
+            Default = "Idle"
+            Sheets  = Map [
+                "Idle"   => Sheet.create { FrameDuration = (ms 100); IsLoop =  true; Sprites = (Sprite.fromColumnsRows 10 1 (load "FreeKnight/Idle"))   }
+                "Attack" => Sheet.create { FrameDuration =  (ms 50); IsLoop = false; Sprites = (Sprite.fromColumnsRows  4 1 (load "FreeKnight/Attack")) }
+                "Run"    => Sheet.create { FrameDuration = (ms 100); IsLoop =  true; Sprites = (Sprite.fromColumnsRows 10 1 (load "FreeKnight/Run"))    }
+                "Crouch" => Sheet.create { FrameDuration =   (ms 0); IsLoop = false; Sprites = [| Sprite.fromTexture        (load "FreeKnight/Crouch") |] }
+            ]
+        }
+        Box = Sheets.create {
+            Default = "Default"
+            Sheets  = Map [
+                "Default" =>
+                    Sheet.create { FrameDuration = (ms 250); IsLoop = true; Sprites = [|
+                        Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.White))
+                        Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.Red))
+                        Sprite.fromTexture (texture 10 10 (Array.replicate 100 Color.Blue))
+                    |]
+                }
+            ]
+        }
     }

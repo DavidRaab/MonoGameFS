@@ -55,11 +55,11 @@ type Sprite = {
 }
 
 type View = {
-    Sprite: Sprite
-    mutable Rotation:  float32<rad>
-    mutable Tint:      Color
-    mutable Scale:     Vector2
-    mutable Effects:   SpriteEffects
+    mutable Sprite:   Sprite
+    mutable Rotation: float32<rad>
+    mutable Tint:     Color
+    mutable Scale:    Vector2
+    mutable Effects:  SpriteEffects
     Layer:  float32
     Origin: Vector2
 }
@@ -74,18 +74,24 @@ type Movement = {
 }
 
 type Sheet = {
-    Sprites: Sprite array
+    Sprites:       Sprite array
+    FrameDuration: TimeSpan
+    IsLoop:        bool
 }
 
-type SheetAnimation = {
-    Sheet:                 Sheet
+type Sheets = {
+    Sheets:  Map<string,Sheet>
+    Default: string
+}
+
+type Animation = {
+    Sheets:                Sheets
+    mutable CurrentSheet:  Sheet
     mutable CurrentSprite: int
-    IsLoop:                bool
     mutable ElapsedTime:   TimeSpan
-    Duration:              TimeSpan
 }
 
-type SheetAnimations = {
-    Animations:     Map<string,SheetAnimation>
-    mutable Active: string
-}
+// type SheetAnimations = {
+//     Animations:     Map<string,SheetAnimation>
+//     mutable Active: string
+// }
