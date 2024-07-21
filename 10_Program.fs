@@ -160,6 +160,8 @@ let initModel assets =
     )
 
     let boxes = ResizeArray<_>()
+    //     0 boxes                -> 12000 fps
+    //
     //  3000 boxes without parent -> 2500 fps
     //  4000 boxes without parent -> 1850 fps
     //  5000 boxes without parent -> 1450 fps
@@ -171,7 +173,6 @@ let initModel assets =
     //  5000 boxes with parent    ->  870 fps
     //  6000 boxes with parent    ->  750 fps
     // 10000 boxes with parent    ->  315 fps
-    //
     // Create 3600 Boxes as child of boxesOrigin (1300 fps)
     for x=1 to 60 do
         for y=1 to 60 do
@@ -210,6 +211,17 @@ let initModel assets =
                 )
             }
         State ()
+    ))
+
+    // every second randomly switch visibility of 1000 boxes
+    // after some seconds roughly the half of boyes should be visisble (1800)
+    let nothing = ()
+    let rng2    = System.Random ()
+    Systems.Timer.addTimer (Timer.every (sec 1.0) nothing (fun _ _ ->
+        for i=1 to 1000 do
+            let ridx = rng2.Next(boxes.Count)
+            boxes.[ridx] |> State.View.iter (fun (view:View) -> view.IsVisible <- not view.IsVisible)
+        State nothing
     ))
 
     // Periodically run Garbage Collector
