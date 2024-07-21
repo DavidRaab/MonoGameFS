@@ -37,28 +37,28 @@ module View =
     let draw (sb:SpriteBatch) =
         let transformAndView = [|
             for KeyValue(entity,v) in State.View.Data do
-                match State.Transform.get entity with
-                | ValueSome t -> (t,v)
-                | ValueNone   -> ()
+                if v.IsVisible then
+                    match State.Transform.get entity with
+                    | ValueSome t -> (t,v)
+                    | ValueNone   -> ()
         |]
 
         transformAndView |> Array.sortInPlaceBy (fun (_,v) -> v.Layer)
         for transform,view in transformAndView do
-            if view.IsVisible then
-                match calculateTransform transform with
-                | ValueNone                           -> ()
-                | ValueSome (position,rotation,scale) ->
-                    sb.Draw(
-                        texture         = view.Sprite.Texture,
-                        position        = position,
-                        sourceRectangle = view.Sprite.SrcRect,
-                        color           = view.Tint,
-                        rotation        = float32 (rotation + view.Rotation),
-                        origin          = view.Origin,
-                        scale           = view.Scale * scale,
-                        effects         = view.Effects,
-                        layerDepth      = view.Layer
-                    )
+            match calculateTransform transform with
+            | ValueNone                           -> ()
+            | ValueSome (position,rotation,scale) ->
+                sb.Draw(
+                    texture         = view.Sprite.Texture,
+                    position        = position,
+                    sourceRectangle = view.Sprite.SrcRect,
+                    color           = view.Tint,
+                    rotation        = float32 (rotation + view.Rotation),
+                    origin          = view.Origin,
+                    scale           = view.Scale * scale,
+                    effects         = view.Effects,
+                    layerDepth      = view.Layer
+                )
 
 // Moves those who should be moved
 module Movement =
