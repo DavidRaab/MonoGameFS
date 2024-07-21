@@ -172,7 +172,6 @@ module View =
     /// Generates a View
     let fromSprite origin layer sprite = {
         Sprite    = sprite
-        IsVisible = true
         Tint      = Color.White
         Rotation  = 0.0f<rad>
         Origin    = Origin.toPosition (float32 sprite.SrcRect.Width) (float32 sprite.SrcRect.Height) origin
@@ -197,7 +196,6 @@ module View =
                 then Array.get sheet.Sprites 0
                 else failwith "Sheet has no Sprites"
             )
-        IsVisible = true
         Tint      = Color.White
         Rotation  = 0.0f<rad>
         Origin    = Vector2.Zero

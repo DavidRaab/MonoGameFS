@@ -64,10 +64,10 @@ module Entity =
     let all () =
         entities :> seq<Entity>
 
-    let transformAndView = EntitiesCache([
-        Cache.create State.Transform
-        Cache.create State.View
-    ])
+    // let transformAndView = EntitiesCache([
+    //     Cache.create State.Transform
+    //     Cache.create State.View
+    // ])
 
     let transformAndMovement = EntitiesCache([
         Cache.create State.Transform
@@ -79,8 +79,8 @@ module EntityExtension =
     type Entity with
         member this.addTransform t           = State.Transform.add t this
         member this.deleteTransform ()       = State.Transform.delete this
-        member this.addView view             = State.View.add view this
-        member this.deleteView ()            = State.View.delete this
+        member entity.addView view           = State.View.add entity true view
+        member this.deleteView ()            = State.View.remove this
         member this.addMovement mov          = State.Movement.add mov this
         member this.deleteMovement ()        = State.Movement.delete this
         member this.addSheetAnimations anim  = State.SheetAnimations.add anim this

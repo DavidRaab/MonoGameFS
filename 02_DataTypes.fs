@@ -55,7 +55,6 @@ type Sprite = {
 }
 
 type View = {
-    mutable IsVisible: bool
     Sprite: Sprite
     mutable Rotation:  float32<rad>
     mutable Tint:      Color

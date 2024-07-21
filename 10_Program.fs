@@ -23,11 +23,106 @@ type MouseRectangle =
 type Model = {
     Knight:         Entity
     MouseRectangle: MouseRectangle
-    BoxesOrigin:    Entity
 }
+
+// Called in initModel - Sets up all the boxes
+let boxes assets =
+    // black box that rotates
+    let boxesOrigin = Entity.init (fun e ->
+        e.addView      (View.fromSpriteCenter BG1 assets.Sprites.WhiteBox |> View.setTint Color.Black)
+        e.addTransform (Transform.fromPosition 0f 0f)
+        e.addMovement {
+            Direction = ValueNone // ValueSome (Relative (Vector2.Right * 50f))
+            Rotation  = ValueSome 2f<rad>
+        }
+    )
+
+    let boxes = ResizeArray<_>()
+    //     0 boxes                -> 12000 fps
+    //
+    //  3000 boxes without parent -> 2500 fps
+    //  4000 boxes without parent -> 1850 fps
+    //  5000 boxes without parent -> 1450 fps
+    //  6000 boxes without parent -> 1200 fps
+    // 10000 boxes without parent ->  510 fps
+    //
+    //  3000 boxes with parent    -> 1525 fps
+    //  4000 boxes with parent    -> 1150 fps
+    //  5000 boxes with parent    ->  870 fps
+    //  6000 boxes with parent    ->  750 fps
+    // 10000 boxes with parent    ->  315 fps
+    // Create 3600 Boxes as child of boxesOrigin (1150 fps)
+    for x=1 to 60 do
+        for y=1 to 60 do
+            boxes.Add (Entity.init (fun box ->
+                box.addTransform       (
+                    Transform.fromPosition (float32 x * 11f) (float32 y * 11f)
+                    // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
+                    // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
+                    |> Transform.withParent (ValueSome boxesOrigin)
+                )
+                box.addView            (SheetAnimations.toView BG1 assets.Box)
+                box.addSheetAnimations (SheetAnimations.copy assets.Box)
+                // box |> State.View.map (View.withOrigin Center)
+                box.addMovement {
+                    Direction = ValueNone //ValueSome (Relative (Vector2.Right * 25f))
+                    Rotation  = ValueSome (2f<rad>)
+                }
+            ))
+
+    // let all boxes move
+    let rng = System.Random ()
+    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
+        // changes direction and rotation of every box every second to a
+        // new random direction/rotation
+        for box in boxes do
+            // 10% of all boxes will move to world position 0,0 with 10px per second
+            // all other boxes move in a random direction at 25px per second
+            box |> State.Movement.add {
+                Direction = ValueSome(
+                    if   rng.NextSingle() < 0.1f
+                    then Absolute (Vector2.Zero,10f)
+                    else Relative (Vector2.randomDirection 25f)
+                )
+                Rotation = ValueSome(
+                    Radian.fromDeg (rng.NextSingle() * 60f<deg> - 30f<deg>)
+                )
+            }
+        State ()
+    ))
+
+    // only let every second box show : 2200 fps (showing 3000 boxes of 6000)
+    // let mutable switch = true
+    // for box in boxes do
+    //     if switch then
+    //         State.View.switchVisibility box
+    //     switch <- not switch
+
+    // randomly switch visibility after some seconds roughly the half of
+    // boxes should be visisble
+    //
+    // rendering 3000 boxes all shown                -> 2500 fps
+    // rendering 3000 boxes from 6000 (half visible) -> 2000 fps
+    //
+    // switchVisibility has some costs as a view has to be added/removed to
+    // different containers. But usually in a typical game this is not often
+    // called. If visibility stays the same then showing half of the boxes
+    // nearly has same performance as showing all boxes without anyone being
+    // deactivated
+    let rng2 = System.Random ()
+    Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
+        for i=1 to 250 do
+            let ridx = rng2.Next(boxes.Count)
+            State.View.switchVisibility boxes.[ridx]
+        State ()
+    ))
+
+    ()
 
 // Initialize the Game Model
 let initModel assets =
+    boxes assets
+
     let arrow = Entity.init (fun e ->
         e.addTransform (
             Transform.fromPosition 100f 100f
@@ -149,80 +244,7 @@ let initModel assets =
             else State (Choice1Of2 (state-1))
     ))
 
-    // black box that rotates
-    let boxesOrigin = Entity.init (fun e ->
-        e.addView      (View.fromSpriteCenter BG1 assets.Sprites.WhiteBox |> View.setTint Color.Black)
-        e.addTransform (Transform.fromPosition 0f 0f)
-        e.addMovement {
-            Direction = ValueNone // ValueSome (Relative (Vector2.Right * 50f))
-            Rotation  = ValueSome 2f<rad>
-        }
-    )
 
-    let boxes = ResizeArray<_>()
-    //     0 boxes                -> 12000 fps
-    //
-    //  3000 boxes without parent -> 2500 fps
-    //  4000 boxes without parent -> 1850 fps
-    //  5000 boxes without parent -> 1450 fps
-    //  6000 boxes without parent -> 1275 fps
-    // 10000 boxes without parent ->  520 fps
-    //
-    //  3000 boxes with parent    -> 1525 fps
-    //  4000 boxes with parent    -> 1150 fps
-    //  5000 boxes with parent    ->  870 fps
-    //  6000 boxes with parent    ->  750 fps
-    // 10000 boxes with parent    ->  315 fps
-    // Create 3600 Boxes as child of boxesOrigin (1300 fps)
-    for x=1 to 60 do
-        for y=1 to 60 do
-            boxes.Add (Entity.init (fun box ->
-                box.addTransform       (
-                    Transform.fromPosition (float32 x * 11f) (float32 y * 11f)
-                    // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
-                    // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
-                    |> Transform.withParent (ValueSome boxesOrigin)
-                )
-                box.addView            (SheetAnimations.toView BG1 assets.Box)
-                box.addSheetAnimations (SheetAnimations.copy assets.Box)
-                // box |> State.View.map (View.withOrigin Center)
-                box.addMovement {
-                    Direction = ValueNone //ValueSome (Relative (Vector2.Right * 25f))
-                    Rotation  = ValueSome (2f<rad>)
-                }
-            ))
-
-    // let all boxes move
-    let rng = System.Random ()
-    Systems.Timer.addTimer (Timer.every (sec 1.0) () (fun state dt ->
-        // changes direction and rotation of every box every second to a
-        // new random direction/rotation
-        for box in boxes do
-            // 10% of all boxes will move to world position 0,0 with 10px per second
-            // all other boxes move in a random direction at 25px per second
-            box |> State.Movement.add {
-                Direction = ValueSome(
-                    if   rng.NextSingle() < 0.1f
-                    then Absolute (Vector2.Zero,10f)
-                    else Relative (Vector2.randomDirection 25f)
-                )
-                Rotation = ValueSome(
-                    Radian.fromDeg (rng.NextSingle() * 60f<deg> - 30f<deg>)
-                )
-            }
-        State ()
-    ))
-
-    // every second randomly switch visibility of 1000 boxes
-    // after some seconds roughly the half of boyes should be visisble (1800)
-    let nothing = ()
-    let rng2    = System.Random ()
-    Systems.Timer.addTimer (Timer.every (sec 1.0) nothing (fun _ _ ->
-        for i=1 to 1000 do
-            let ridx = rng2.Next(boxes.Count)
-            boxes.[ridx] |> State.View.iter (fun (view:View) -> view.IsVisible <- not view.IsVisible)
-        State nothing
-    ))
 
     // Periodically run Garbage Collector
     Systems.Timer.addTimer (Timer.every (sec 10.0) () (fun _ _ ->
@@ -233,7 +255,6 @@ let initModel assets =
     let gameState = {
         Knight         = knight
         MouseRectangle = NoRectangle
-        BoxesOrigin    = boxesOrigin
     }
     gameState
 
@@ -481,23 +502,22 @@ let update (model:Model) (gameTime:GameTime) (game:MyGame) =
 
     model
 
+// Helper for the spriteBatch Pattern. You always call Begin doSomething and then End.
+// On top i always use a camera for position everything
+let inline doSpriteBatch (sb:SpriteBatch) (camera:Camera) samplerState ([<InlineIfLambda>] f) =
+    sb.Begin(transformMatrix = Camera.matrix camera, samplerState = samplerState)
+    f sb
+    sb.End()
+
 let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     game.GraphicsDevice.Clear Color.CornflowerBlue
-
-    // Helper for the spriteBatch Pattern. You always call Begin doSomething and then End.
-    // On top i always use a camera for position everything
-    let doSpriteBatch (sb:SpriteBatch) (camera:Camera) samplerState f =
-        sb.Begin(transformMatrix = Camera.matrix camera, samplerState = samplerState)
-        f sb
-        sb.End()
-    let onCamera = doSpriteBatch game.SpriteBatch
 
     // Helper to draw a Rectangle
     let drawRect =
         Systems.Drawing.rectangle game.Asset.Sprites.Pixel 2 Color.MidnightBlue
 
     // Draw Game Elements
-    onCamera State.camera SamplerState.PointWrap (fun sb ->
+    doSpriteBatch game.SpriteBatch State.camera SamplerState.PointWrap (fun sb ->
         Systems.View.draw sb
 
         match model.MouseRectangle with
@@ -511,10 +531,22 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
     )
 
     // Draw Game UI
-    onCamera State.uiCamera SamplerState.LinearClamp (fun sb ->
+    doSpriteBatch game.SpriteBatch State.uiCamera SamplerState.LinearClamp (fun sb ->
         FPS.draw game.Asset.Font.Default sb
         Systems.Drawing.mousePosition sb game.Asset.Font.Default (FMouse.position ()) (Vector2.create 3f 340f)
         Systems.Drawing.trackPosition sb game.Asset.Font.Default model.Knight (Vector2.create 400f 460f)
+
+        sb.DrawString(
+            spriteFont = game.Asset.Font.Default,
+            text       = String.Format("Visible: {0}", State.View.visible.Count),
+            position   = Vector2(320f, 3f),
+            color      = Color.Yellow,
+            rotation   = 0f,
+            origin     = Vector2.Zero,
+            scale      = 1f,
+            effects    = SpriteEffects.None,
+            layerDepth = 0f
+        )
     )
 
     if resetInput then

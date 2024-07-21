@@ -36,11 +36,10 @@ module View =
 
     let draw (sb:SpriteBatch) =
         let transformAndView = [|
-            for KeyValue(entity,v) in State.View.Data do
-                if v.IsVisible then
-                    match State.Transform.get entity with
-                    | ValueSome t -> (t,v)
-                    | ValueNone   -> ()
+            for KeyValue(entity,v) in State.View.visible do
+                match State.Transform.get entity with
+                | ValueSome t -> (t,v)
+                | ValueNone   -> ()
         |]
 
         transformAndView |> Array.sortInPlaceBy (fun (_,v) -> v.Layer)

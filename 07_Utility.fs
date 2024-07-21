@@ -351,17 +351,16 @@ type FPS = {
 }
 
 module FPS =
-    let create updates draws time ufps dfps = {
-        Updates     = updates
-        Draws       = draws
-        ElapsedTime = time
-        UpdateFPS   = ufps
-        DrawFPS     = dfps
-    }
+    let create (fps:FPS) : FPS = fps
 
     // Global State
-    let state =
-        create 0 0 TimeSpan.Zero 0.0 0.0
+    let state = create {
+        Updates     = 0
+        Draws       = 0
+        ElapsedTime = TimeSpan.Zero
+        UpdateFPS   = 0
+        DrawFPS     = 0
+    }
 
     // Called on each update
     let update (deltaTime:TimeSpan) =
@@ -384,7 +383,7 @@ module FPS =
             color      = Color.Yellow,
             rotation   = 0f,
             origin     = Vector2.Zero,
-            scale      = 1.33f,
+            scale      = 1f,
             effects    = SpriteEffects.None,
             layerDepth = 0f
         )
