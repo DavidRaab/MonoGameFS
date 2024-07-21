@@ -22,18 +22,18 @@ So there are three cases of functions
 *)
 
 module Radian =
-    let inline wrap (x:float32) =
+    let inline wrap (x:float32) : float32<rad> =
         LanguagePrimitives.Float32WithMeasure<rad> x
 
     /// A turn describes the angle of a circle between 0 and 1.
     /// So 0.25 or 1/4 is a 1/4 circle or 90 degrees. 0.5 is a half-circle and so on.
-    let inline fromTurn x =
+    let inline fromTurn (x:float32) : float32<rad> =
         wrap (x * System.MathF.Tau)
 
-    let inline fromDeg (degree:float32<deg>) =
+    let inline fromDeg (degree:float32<deg>) : float32<rad> =
         wrap(degree * System.MathF.PI / 180.0f<deg>)
 
-    let inline toDeg (radiant:float32<rad>) =
+    let inline toDeg (radiant:float32<rad>) : float32<deg> =
         (float32 radiant) * 180.0f<deg> / System.MathF.PI
 
 module Origin =
@@ -46,7 +46,7 @@ module Origin =
     /// Origin.toPosition 100f 100f Right  = Vector2(100f,50f)
     /// </code>
     /// </summary>
-    let toPosition width height origin =
+    let toPosition width height origin : Vector2 =
         let x,y =
             match origin with
             | TopLeft        ->         0f,          0f
@@ -68,17 +68,17 @@ module Transform =
     /// its like an additional type declaration. The Compiler/IDE immediately knows
     /// which record you wanna create and which fields are needed. Also reads
     /// nicely in written code.
-    let inline from (t:Transform) = t
+    let inline from (t:Transform) : Transform = t
 
     // Constructors
-    let create parent pos rot scale = from {
+    let create parent pos rot scale : Transform = from {
         Parent   = parent
         Position = pos
         Rotation = rot
         Scale    = scale
     }
 
-    let empty = from {
+    let empty : Transform = from {
         Parent   = ValueNone
         Position = Vector2.Zero
         Rotation = 0f<rad>
@@ -86,13 +86,13 @@ module Transform =
     }
 
     /// Creates a Transform with the supplied vector2
-    let inline fromVector pos   = { empty with Position = pos }
+    let inline fromVector pos   : Transform = { empty with Position = pos }
 
     /// Creates a Transform with a position specified as x,y coordinates
-    let inline fromPosition x y = { empty with Position = Vector2.create x y }
+    let inline fromPosition x y : Transform = { empty with Position = Vector2.create x y }
 
     /// Creates a Transform with Position and Rotation
-    let inline fromPosRot pos rot = {
+    let inline fromPosRot pos rot : Transform = {
         empty with
             Position = pos
             Rotation = rot
@@ -100,38 +100,38 @@ module Transform =
 
     // Immutable Properties
     /// Creates a new Transform with the provided Parent Transform.
-    let withParent parent (t:Transform) =
+    let withParent parent (t:Transform) : Transform =
         { t with Parent = parent }
 
     // Mutable Properties
-    let inline setPosition newPos (t:Transform) =
+    let inline setPosition newPos (t:Transform) : Transform =
         t.Position <- newPos
         t
 
-    let inline setRotation rotation (t:Transform) =
+    let inline setRotation rotation (t:Transform) : Transform =
         t.Rotation <- rotation
         t
 
-    let inline setRotationVector vector (t:Transform) =
+    let inline setRotationVector vector (t:Transform) : Transform =
         t.Rotation <- Vector2.angle vector
         t
 
-    let inline setScale newScale (t:Transform) =
+    let inline setScale newScale (t:Transform) : Transform =
         t.Scale <- newScale
         t
 
     /// Adds a vector to the Position
-    let inline addPosition vec2 (t:Transform) =
+    let inline addPosition vec2 (t:Transform) : unit =
         t.Position <- t.Position + vec2
 
     // TODO: addLocalTransform - that applies the current rotation
 
     /// Adds rotation to Transform specified in radiant
-    let inline addRotation rotation (t:Transform) =
+    let inline addRotation rotation (t:Transform) : unit =
         t.Rotation <- t.Rotation + rotation
 
     /// Adds rotation to Transform specified in degree
-    let inline addRotationDeg rot (t:Transform) =
+    let inline addRotationDeg rot (t:Transform) : unit =
         t.Rotation <- t.Rotation + (Radian.fromDeg rot)
 
 
