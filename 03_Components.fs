@@ -395,47 +395,6 @@ module Animation =
             let validAnims = System.String.Join(',', Map.keys anim.Sheets.Sheets)
             failwithf "Cannot switch Animation to \"%s\" valid animation are %s" name validAnims
 
-// module SheetAnimations =
-//     let create active animations =
-//         let animations = Map animations
-//         let validAnims = Map.keys animations
-//         if Seq.contains active validAnims then {
-//             Animations = animations
-//             Active     = active
-//         }
-//         else
-//             failwithf "Cannot set active Animation to \"%s\" valid animations are %A" active validAnims
-
-//     let hasAnimation str anims =
-//         Seq.contains str anims.Animations.Keys
-
-//     let getAnimationsNames anims = [
-//         for animationName in anims.Animations.Keys do
-//             yield animationName
-//     ]
-
-//     let getAnimationExn name anims =
-//         match Map.tryFind name anims.Animations with
-//         | Some anim -> anim
-//         | None      -> failwithf "Cannot find animation \"%s\" available animations %A" name (getAnimationsNames anims)
-
-//     let getCurrentAnimation anims =
-//         getAnimationExn anims.Active anims
-
-//     let setAnimation active anims =
-//         if hasAnimation active anims then
-//             if anims.Active <> active then
-//                 SheetAnimation.reset (getCurrentAnimation anims)
-//                 anims.Active <- active
-//         else
-//             eprintfn "No Animation \"%s\" available Animations %A at\n%s"
-//                 active (getAnimationsNames anims) (stackTrace 1)
-
-//     let toView layer anims =
-//         let anim = getCurrentAnimation anims
-//         SheetAnimation.sheet anim
-//         |> View.fromSheet layer (anim.CurrentSprite)
-
 module Movement =
     let inline from (x:Movement) = x
 

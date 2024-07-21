@@ -49,11 +49,13 @@ type Camera = {
     MaxZoom:          float
 }
 
+/// A sprite is a selection from a Texture2D
 type Sprite = {
     Texture: Texture2D
     SrcRect: Rectangle
 }
 
+/// View component. An Entity needs this component to be shown on screen
 type View = {
     mutable Sprite:   Sprite
     mutable Rotation: float32<rad>
@@ -64,15 +66,7 @@ type View = {
     Origin: Vector2
 }
 
-type MovementDirection =
-    | Relative of Vector2
-    | Absolute of position:Vector2 * speed:float32
-
-type Movement = {
-    Direction : MovementDirection voption
-    Rotation  : float32<rad>      voption
-}
-
+/// A collection of multiple sprites used in an Animation
 type Sheet = {
     Sprites:       Sprite array
     FrameDuration: TimeSpan
@@ -91,7 +85,12 @@ type Animation = {
     mutable ElapsedTime:   TimeSpan
 }
 
-// type SheetAnimations = {
-//     Animations:     Map<string,SheetAnimation>
-//     mutable Active: string
-// }
+type MovementDirection =
+    | Relative of Vector2
+    | Absolute of position:Vector2 * speed:float32
+
+type Movement = {
+    Direction : MovementDirection voption
+    Rotation  : float32<rad>      voption
+}
+

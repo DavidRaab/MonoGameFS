@@ -59,7 +59,7 @@ let boxes assets =
                 box.addTransform       (
                     Transform.fromPosition (float32 x * 11f) (float32 y * 11f)
                     // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
-                    // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
+                    // must be computed with a matrix calculated of the parent.
                     // |> Transform.withParent (ValueSome boxesOrigin)
                 )
                 box.addView      (Sheets.createView BG1 Center assets.Box)
@@ -246,8 +246,6 @@ let initModel assets =
             then State (Choice2Of2 (state-1))
             else State (Choice1Of2 (state-1))
     ))
-
-
 
     // Periodically run Garbage Collector
     Systems.Timer.addTimer (Timer.every (sec 10.0) () (fun _ _ ->
