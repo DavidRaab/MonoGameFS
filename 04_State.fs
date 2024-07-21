@@ -96,12 +96,12 @@ module State =
 
         /// Get visibility and View of an Entity. If no View is present returns ValueNone
         let get (e:Entity) : (bool * View) voption =
-            match Dictionary.find e visible with
-            | ValueSome(view) -> ValueSome (true,view)
-            | ValueNone       ->
-                match Dictionary.find e hidden with
-                | ValueSome(view) -> ValueSome (false,view)
-                | ValueNone       -> ValueNone
+            match visible.TryGetValue(e) with
+            | true, view -> ValueSome (true,view)
+            | false, _   ->
+                match hidden.TryGetValue(e) with
+                | true, view -> ValueSome (false,view)
+                | false, _   -> ValueNone
 
         /// Returns if Entity is Visible. Also returns false when no View was added for an Entity.
         let inline isVisible (e:Entity) =
@@ -125,14 +125,14 @@ module State =
             | ValueNone -> ()
 
         /// Get View, runs function on it, and stores the new View returned by it
-        let map (f: View -> View) (e:Entity) =
+        let inline map ([<InlineIfLambda>] f: View -> View) (e:Entity) =
             match get e with
             | ValueSome(true, view) -> visible.[e] <- (f view)
             | ValueSome(false,view) -> hidden.[e]  <- (f view)
             | ValueNone             -> ()
 
         /// Get view and runs a function on it. Does nothing when no View was added for an Entity
-        let iter (f: View -> unit) (e:Entity) =
+        let inline iter ([<InlineIfLambda>] f: View -> unit) (e:Entity) =
             match get e with
             | ValueSome(_,view) -> f view
             | ValueNone         -> ()

@@ -381,10 +381,8 @@ module Animation =
                 anim.CurrentSprite <- anim.CurrentSprite + 1
 
     /// Updates the View to the current Sprite
-    let updateView (anim:Animation) (view:View) : unit =
-        match currentSprite anim with
-        | ValueSome(sprite) -> view.Sprite <- sprite
-        | ValueNone         -> ()
+    let inline updateView (view:View) (anim:Animation) : unit =
+        view.Sprite <- anim.CurrentSheet.Sprites.[anim.CurrentSprite]
 
     /// Switch to another sheet animation
     let switchAnimation name (anim:Animation) : unit =

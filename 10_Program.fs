@@ -51,15 +51,16 @@ let boxes assets =
     //  5000 boxes with parent    ->  925 fps
     //  6000 boxes with parent    ->  750 fps
     // 10000 boxes with parent    ->  350 fps
+    //
     // Create 3600 Boxes as child of boxesOrigin (1320 fps)
-    for x=1 to 60 do
+    for x=1 to 100 do
         for y=1 to 60 do
             boxes.Add (Entity.init (fun box ->
                 box.addTransform       (
                     Transform.fromPosition (float32 x * 11f) (float32 y * 11f)
                     // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
                     // must be computed with a matrix calculated of the parent. fps drops from 2200fps -> 1200fps
-                    |> Transform.withParent (ValueSome boxesOrigin)
+                    // |> Transform.withParent (ValueSome boxesOrigin)
                 )
                 box.addView      (Sheets.createView BG1 Center assets.Box)
                 box.addAnimation (Animation.create assets.Box)
@@ -91,31 +92,34 @@ let boxes assets =
         State ()
     ))
 
-    // only let every second box show : 2200 fps (showing 3000 boxes of 6000)
+    // only show every second box - 3000 out of 6000
+    //   - with parent    1500 fps
+    //   - without parent 2500 fps
     // let mutable switch = true
     // for box in boxes do
     //     if switch then
     //         State.View.switchVisibility box
     //     switch <- not switch
 
-    // randomly switch visibility after some seconds roughly the half of
-    // boxes should be visisble
+    //----------
+    // randomly switch visibility. after some seconds roughly the half of boxes are visisble
     //
+    // All without parent
     // rendering 3000 boxes all shown                -> 2500 fps
-    // rendering 3000 boxes from 6000 (half visible) -> 2000 fps
+    // rendering 3000 boxes from 6000 (half visible) -> 2200 fps
     //
-    // switchVisibility has some costs as a view has to be added/removed to
+    // Calling switchVisibility has some costs as a view has to be added/removed to
     // different containers. But usually in a typical game this is not often
     // called. If visibility stays the same then showing half of the boxes
     // nearly has same performance as showing all boxes without anyone being
     // deactivated
-    // let rng2 = System.Random ()
-    // Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
-    //     for i=1 to 250 do
-    //         let ridx = rng2.Next(boxes.Count)
-    //         State.View.switchVisibility boxes.[ridx]
-    //     State ()
-    // ))
+    let rng2 = System.Random ()
+    Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
+        for i=1 to 250 do
+            let ridx = rng2.Next(boxes.Count)
+            State.View.switchVisibility boxes.[ridx]
+        State ()
+    ))
 
     ()
 
