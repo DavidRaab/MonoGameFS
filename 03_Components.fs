@@ -497,11 +497,14 @@ module Camera =
             camera.Matrix <- Some matrix
             matrix
 
-    let screenToWorld position (camera:Camera) =
+    /// Transforms a screen-point defined as Vector2 to the World Position
+    let screenToWorld position (camera:Camera) : Vector2 =
         Vector2.Transform(position, Matrix.Invert (matrix camera))
 
-    let screenPointToWorld (position:Point) (camera:Camera) =
+    /// Transform a screen-point defined as Point to the World Position
+    let screenPointToWorld (position:Point) (camera:Camera) : Vector2 =
         Vector2.Transform(position.ToVector2(), Matrix.Invert (matrix camera))
 
-    let worldToScreen position (camera:Camera) =
+    /// Transforms a world-position to screen position
+    let worldToScreen (position:Vector2) (camera:Camera) : Vector2 =
         Vector2.Transform(position, matrix camera)

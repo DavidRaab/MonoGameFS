@@ -123,6 +123,7 @@ module Extensions =
         static member addY y (vec:Vector2) = Vector2(vec.X  , vec.Y+y)
         static member flipY  (vec:Vector2) = Vector2(vec.X  ,-vec.Y  )
 
+        /// Calculates the angle relative to Vector2.Up Vector2(1,-1)
         static member angle (vec:Vector2) =
             // (System.MathF.Atan2(vec.Y, vec.X) * 1f<rad>
             Vector2.angle2 Vector2.Up vec
