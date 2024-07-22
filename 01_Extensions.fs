@@ -156,12 +156,10 @@ module Extensions =
     type System.Collections.Generic.Dictionary<'a,'b> with
         /// add or overwrites value for specified key. return value of `true`
         /// inidicates that the key was added to the Dictionary
-        static member add key value (dic:Dictionary<'a,'b>) =
-            let contained = dic.ContainsKey(key)
-            if   contained
-            then dic.[key] <- value
-            else dic.Add(key,value)
-            not contained
+        static member inline add key value (dic:Dictionary<'a,'b>) =
+            match dic.TryGetValue key with
+            | true, value -> dic.[key] <- value; false
+            | false, _    -> dic.Add(key,value); true
 
         static member change key f (dic:Dictionary<'a,'b>) =
             match dic.TryGetValue key with
