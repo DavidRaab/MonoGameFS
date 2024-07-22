@@ -157,9 +157,9 @@ module Extensions =
         /// add or overwrites value for specified key. return value of `true`
         /// inidicates that the key was added to the Dictionary
         static member inline add key value (dic:Dictionary<'a,'b>) =
-            match dic.TryGetValue key with
-            | true, value -> dic.[key] <- value; false
-            | false, _    -> dic.Add(key,value); true
+            if dic.ContainsKey(key)
+            then dic.[key] <- value; false
+            else dic.Add(key,value); true
 
         static member change key f (dic:Dictionary<'a,'b>) =
             match dic.TryGetValue key with
