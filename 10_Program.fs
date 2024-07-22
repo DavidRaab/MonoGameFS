@@ -130,16 +130,11 @@ let initModel assets =
     let arrow = Entity.init (fun e ->
         e.addTransform (
             Transform.fromPosition 100f 100f
-            // |> Transform.setDirection (Vector2.create 1f -1f)
+            // |> Transform.setRotationVector (Vector2.Right)
         )
-        e.addView (
-            View.fromSpriteCenter FG1 assets.Sprites.Arrow
-            // |> View.setRotation (Radian.fromTurn 0.25f)
-        )
+        e.addView (View.fromSpriteCenter FG1 assets.Sprites.Arrow)
         Systems.Timer.addTimer (Timer.every (sec 0.1) () (fun _ dt ->
             e |> State.Transform.iter (fun tf ->
-                // let newD = Vector2.fromAngle ((Vector2.angle tf.Direction) + (Radian.fromTurn 0.125f))
-                // Transform.setDirection newD tf |> ignore
                 Transform.addRotation 0.1f<rad> tf
             )
             State ()
