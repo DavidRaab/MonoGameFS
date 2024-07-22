@@ -78,24 +78,28 @@ module Transform =
         Scale    = scale
     }
 
-    let empty : Transform = from {
+    /// Creates a Transform with the supplied vector2
+    let inline fromVector pos : Transform = from {
         Parent   = ValueNone
-        Position = Vector2.Zero
+        Position = pos
         Rotation = 0f<rad>
         Scale    = Vector2.One
     }
 
-    /// Creates a Transform with the supplied vector2
-    let inline fromVector pos   : Transform = { empty with Position = pos }
-
     /// Creates a Transform with a position specified as x,y coordinates
-    let inline fromPosition x y : Transform = { empty with Position = Vector2.create x y }
+    let inline fromPosition x y : Transform = from {
+        Parent   = ValueNone
+        Position = Vector2(x,y)
+        Rotation = 0f<rad>
+        Scale    = Vector2.One
+    }
 
     /// Creates a Transform with Position and Rotation
-    let inline fromPosRot pos rot : Transform = {
-        empty with
-            Position = pos
-            Rotation = rot
+    let inline fromPosRot pos rot : Transform = from {
+        Parent   = ValueNone
+        Position = pos
+        Rotation = rot
+        Scale    = Vector2.One
     }
 
     // Immutable Properties
@@ -371,7 +375,7 @@ module Animation =
         Sheet.sprite anim.CurrentSprite anim.CurrentSheet
 
     /// Advance the animation to the next Sprite
-    let nextSprite anim =
+    let nextSprite (anim:Animation) : unit =
         let sheet     = anim.CurrentSheet
         let maxSprite = Sheet.length sheet
         if sheet.IsLoop then
