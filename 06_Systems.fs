@@ -64,7 +64,7 @@ module Movement =
     let update (deltaTime:TimeSpan) =
         let fdt = float32 deltaTime.TotalSeconds
         for KeyValue(entity,mov) in State.Movement.Data do
-            entity |> State.Transform.iter (fun t ->
+            entity |> State.Transform.fetch (fun t ->
                 match mov.Direction with
                 | ValueNone                        -> ()
                 | ValueSome (Relative dir)         -> Transform.addPosition (dir * fdt) t
@@ -116,7 +116,7 @@ module Drawing =
         )
 
     let trackPosition (sb:SpriteBatch) (font:SpriteFont) (entity:Entity) (whereToDraw:Vector2) =
-        entity |> State.Transform.iter (fun t ->
+        entity |> State.Transform.fetch (fun t ->
             let screen = Camera.worldToScreen t.Position State.camera
             sb.DrawString(
                 spriteFont = font,

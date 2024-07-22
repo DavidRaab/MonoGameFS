@@ -134,7 +134,7 @@ let initModel assets =
         )
         e.addView (View.fromSpriteCenter FG1 assets.Sprites.Arrow)
         Systems.Timer.addTimer (Timer.every (sec 0.1) () (fun _ dt ->
-            e |> State.Transform.iter (fun tf ->
+            e |> State.Transform.fetch (fun tf ->
                 Transform.addRotation 0.1f<rad> tf
             )
             State ()
@@ -171,12 +171,12 @@ let initModel assets =
         Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
             match state with
             | Choice1Of2 right ->
-                e |> State.Transform.iter (Transform.addPosition (Vector2.Right * 5f))
+                e |> State.Transform.fetch (Transform.addPosition (Vector2.Right * 5f))
                 if right < 20
                 then State (Choice1Of2 (right+1))
                 else State (Choice2Of2 (right-1))
             | Choice2Of2 left ->
-                e |> State.Transform.iter (Transform.addPosition (Vector2.Left * 5f))
+                e |> State.Transform.fetch (Transform.addPosition (Vector2.Left * 5f))
                 if left > 0
                 then State (Choice2Of2 (left-1))
                 else State (Choice1Of2 (left+1))
@@ -219,7 +219,7 @@ let initModel assets =
     // Let stars rotate at 60 fps and 1° each frame
     let deg1 = Radian.fromDeg 1f<deg>
     Systems.Timer.addTimer (Timer.every (sec (1.0/60.0)) () (fun state dt ->
-        List.iter (State.Transform.iter (Transform.addRotation deg1)) [sun;planet1;planet2;planet3]
+        List.iter (State.Transform.fetch (Transform.addRotation deg1)) [sun;planet1;planet2;planet3]
         State ()
     ))
 
@@ -227,14 +227,14 @@ let initModel assets =
     Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
         match state with
         | Choice1Of2 state ->
-            box |> State.Transform.iter (fun t ->
+            box |> State.Transform.fetch (fun t ->
                 Transform.addPosition (Vector2.create 10f 0f) t
             )
             if state < 4
             then State (Choice1Of2 (state+1))
             else State (Choice2Of2 (state+1))
         | Choice2Of2 state ->
-            box |> State.Transform.iter (fun t ->
+            box |> State.Transform.fetch (fun t ->
                 Transform.addPosition (Vector2.create -10f 0f) t
             )
             if state > -4
@@ -393,11 +393,11 @@ let fixedUpdate model (deltaTime:TimeSpan) =
             | IsCrouch       -> IsCrouch
             | IsLeft v       ->
                 model.Knight |> State.View.iter      (View.flipHorizontal true)
-                model.Knight |> State.Transform.iter (Transform.addPosition (v * 300f * fDeltaTime))
+                model.Knight |> State.Transform.fetch (Transform.addPosition (v * 300f * fDeltaTime))
                 IsLeft v
             | IsRight v     ->
                 model.Knight |> State.View.iter      (View.flipHorizontal false)
-                model.Knight |> State.Transform.iter (Transform.addPosition (v * 300f * fDeltaTime))
+                model.Knight |> State.Transform.fetch (Transform.addPosition (v * 300f * fDeltaTime))
                 IsRight v
             | IsIdle -> IsIdle
 

@@ -6,39 +6,6 @@ open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
-// Provides a Cache for getting entities with certain components
-type ICacheable =
-    abstract member Entities          : HashSet<Entity>
-    abstract member OnEntitiesChanged : IEvent<unit>
-
-type Cache =
-    static member inline create x = {
-        new ICacheable with
-            member this.Entities          = (^Cache : (member Entities          : HashSet<Entity>) x)
-            member this.OnEntitiesChanged = (^Cache : (member OnEntitiesChanged : IEvent<unit>   ) x)
-    }
-
-type EntitiesCache<'a when 'a :> ICacheable>(states:seq<'a>) =
-    let outdated      = Array.replicate (Seq.length states) true
-    let entities      = Array.ofSeq     (states |> Seq.map (fun state -> state.Entities))
-    let mutable cache = HashSet<Entity>()
-
-    do
-        states |> Seq.iteri (fun idx state ->
-            state.OnEntitiesChanged |> Event.add (fun () ->
-                outdated.[idx] <- true
-            )
-        )
-
-    member _.GetCache () =
-        if Array.exists id outdated then
-            cache <- HashSet.intersectMany entities
-            for idx=0 to outdated.Length-1 do
-                outdated.[idx] <- false
-            cache
-        else
-            cache
-
 module Entity =
     let mutable private counter = 0
     let private entities = ResizeArray<Entity>()
@@ -64,16 +31,6 @@ module Entity =
     let all () =
         entities :> seq<Entity>
 
-    // let transformAndView = EntitiesCache([
-    //     Cache.create State.Transform
-    //     Cache.create State.View
-    // ])
-
-    // let transformAndMovement = EntitiesCache([
-    //     Cache.create State.Transform
-    //     Cache.create State.Movement
-    // ])
-
 [<AutoOpen>]
 module EntityExtension =
     type Entity with
@@ -86,7 +43,7 @@ module EntityExtension =
         member entity.addAnimation anim  = State.Animation.add anim entity
         member entity.deleteAnimation () = State.Animation.delete entity
         member entity.setAnimation name =
-            entity |> State.Animation.iter (fun anim ->
+            entity |> State.Animation.fetch (fun anim ->
                 Animation.switchAnimation name anim
             )
         member entity.getSheetExn name : Sheet =
