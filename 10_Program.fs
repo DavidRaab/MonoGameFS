@@ -53,14 +53,14 @@ let boxes assets =
     // 10000 boxes with parent    ->  350 fps
     //
     // Create 3600 Boxes as child of boxesOrigin (1320 fps)
-    for x=1 to 100 do
+    for x=1 to 60 do
         for y=1 to 60 do
             boxes.Add (Entity.init (fun box ->
                 box.addTransform       (
                     Transform.fromPosition (float32 x * 11f) (float32 y * 11f)
                     // this cost a lot of performance because rotation/position/scale of all 3.000 boxes
                     // must be computed with a matrix calculated of the parent.
-                    // |> Transform.withParent (ValueSome boxesOrigin)
+                    |> Transform.withParent (ValueSome boxesOrigin)
                 )
                 box.addView      (Sheets.createView BG1 Center assets.Box)
                 box.addAnimation (Animation.create assets.Box)
@@ -113,13 +113,13 @@ let boxes assets =
     // called. If visibility stays the same then showing half of the boxes
     // nearly has same performance as showing all boxes without anyone being
     // deactivated
-    let rng2 = System.Random ()
-    Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
-        for i=1 to 250 do
-            let ridx = rng2.Next(boxes.Count)
-            State.View.switchVisibility boxes.[ridx]
-        State ()
-    ))
+    // let rng2 = System.Random ()
+    // Systems.Timer.addTimer (Timer.every (sec 0.25) () (fun _ _ ->
+    //     for i=1 to 250 do
+    //         let ridx = rng2.Next(boxes.Count)
+    //         State.View.switchVisibility boxes.[ridx]
+    //     State ()
+    // ))
 
     ()
 
@@ -446,10 +446,10 @@ let fixedUpdate model (deltaTime:TimeSpan) =
     for action in actions do
         match action with
         | CameraHome                 -> Camera.setPosition   (Vector2.create 0f 0f) State.camera |> ignore
-        | ZoomIn                     -> Camera.addZoom       (1.0 * deltaTime.TotalSeconds) State.camera
-        | ZoomOut                    -> Camera.subtractZoom  (1.0 * deltaTime.TotalSeconds) State.camera
-        | ScrollZoom (IsGreater 0 x) -> Camera.addZoom        0.1 State.camera
-        | ScrollZoom (IsSmaller 0 x) -> Camera.subtractZoom   0.1 State.camera
+        | ZoomIn                     -> Camera.addZoom       (1.0f * fDeltaTime) State.camera
+        | ZoomOut                    -> Camera.subtractZoom  (1.0f * fDeltaTime) State.camera
+        | ScrollZoom (IsGreater 0 x) -> Camera.addZoom        0.1f State.camera
+        | ScrollZoom (IsSmaller 0 x) -> Camera.subtractZoom   0.1f State.camera
         | Camera v                   -> Camera.add           (v * 400f * ((float32 State.camera.MaxZoom + 1f) - float32 State.camera.Zoom) * fDeltaTime) State.camera
         | _                          -> ()
 
@@ -585,7 +585,7 @@ let init (game:MyGame) =
 
     game.CalculateViewport ()
     let viewport = game.GraphicsDevice.Viewport
-    State.camera   <- Camera.create (virtualWidth,virtualHeight) viewport |> Camera.withMinMaxZoom 0.03 3
+    State.camera   <- Camera.create (virtualWidth,virtualHeight) viewport |> Camera.withMinMaxZoom 0.03f 3f
     State.uiCamera <- Camera.create (virtualWidth,virtualHeight) viewport
 
     // Event when user resize window

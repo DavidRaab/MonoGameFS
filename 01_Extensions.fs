@@ -55,13 +55,13 @@ module Extensions =
             )
         )
 
-    let sec sec =
+    let inline sec sec : TimeSpan =
         TimeSpan.FromSeconds sec
 
-    let clamp (min:float) max value =
+    let inline clamp (min:float) max value =
         System.Math.Clamp(value, min, max)
 
-    let clampF (min:float32) max value =
+    let inline clampF (min:float32) max value =
         System.Math.Clamp(value, min, max)
 
     let inline nearly target difference value =

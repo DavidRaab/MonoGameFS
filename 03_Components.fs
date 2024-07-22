@@ -447,20 +447,20 @@ module Camera =
         // origin to all game objects.
         * Matrix.CreateTranslation (-camera.Origin)
         // Then we apply the camera zoom level
-        * Matrix.CreateScale       (float32 camera.Zoom, float32 camera.Zoom, 1f)
+        * Matrix.CreateScale       (camera.Zoom, camera.Zoom, 1f)
         // then we finally add the camera origin back
         * Matrix.CreateTranslation (camera.Origin)
 
     let create (w:int,h:int) (viewport:Viewport) : Camera = {
             Camera.Position = Vector2.create 0f 0f
-            Zoom            = 1.0
+            Zoom            = 1.0f
             Matrix          = None
             VirtualWidth    = w
             VirtualHeight   = h
             Viewport        = viewport
             Origin          = Vector3(Origin.toPosition (float32 w) (float32 h) Center, 0f)
-            MinZoom         = 0.03
-            MaxZoom         = 2.0
+            MinZoom         = 0.03f
+            MaxZoom         = 2.0f
         }
 
     let withMinMaxZoom min max (camera:Camera) : Camera =
@@ -473,16 +473,16 @@ module Camera =
         camera.Position <- vec
         camera.Matrix   <- None
 
-    let setZoom zoom (camera:Camera) : unit =
-        camera.Zoom   <- clamp zoom camera.MinZoom camera.MaxZoom
+    let setZoom (zoom:float32) (camera:Camera) : unit =
+        camera.Zoom   <- clampF zoom camera.MinZoom camera.MaxZoom
         camera.Matrix <- None
 
-    let addZoom addition (camera:Camera) : unit =
-        camera.Zoom   <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom + addition)
+    let addZoom (zoom:float32) (camera:Camera) : unit =
+        camera.Zoom   <- clampF camera.MinZoom camera.MaxZoom (camera.Zoom + zoom)
         camera.Matrix <- None
 
-    let subtractZoom subtraction (camera:Camera) : unit =
-        camera.Zoom   <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom - subtraction)
+    let subtractZoom (zoom:float32) (camera:Camera) : unit =
+        camera.Zoom   <- clampF camera.MinZoom camera.MaxZoom (camera.Zoom - zoom)
         camera.Matrix <- None
 
     let add vec (camera:Camera) : unit =
