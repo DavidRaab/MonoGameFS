@@ -138,14 +138,14 @@ module Drawing =
     let line (texture:Texture2D) (thickness:int) color (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
         let hypotenuse = (stop - start)
         let length     = int (Vector2.length hypotenuse)
-        let angle      = Vector2.angle hypotenuse
+        let angle      = System.MathF.Atan2(hypotenuse.Y, hypotenuse.X)
         sb.Draw(
             texture         = texture,
             position        = start,
             scale           = Vector2.One,
             sourceRectangle = Rectangle(0,0,length,thickness),
             color           = color,
-            rotation        = float32 angle,
+            rotation        = angle,
             origin          = Vector2(0f, float32 thickness / 2f),
             effects         = SpriteEffects.None,
             layerDepth      = 0f
