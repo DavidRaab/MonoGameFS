@@ -69,10 +69,10 @@ module Entity =
     //     Cache.create State.View
     // ])
 
-    let transformAndMovement = EntitiesCache([
-        Cache.create State.Transform
-        Cache.create State.Movement
-    ])
+    // let transformAndMovement = EntitiesCache([
+    //     Cache.create State.Transform
+    //     Cache.create State.Movement
+    // ])
 
 [<AutoOpen>]
 module EntityExtension =
