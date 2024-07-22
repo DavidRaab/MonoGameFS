@@ -134,7 +134,7 @@ module Extensions =
             let det = v1.X * v2.Y - v1.Y * v2.X
             System.MathF.Atan2(det, dot) * 1f<rad>
 
-        static member rng = System.Random()
+        static member private rng = System.Random()
         /// creates a random vector where x,y are in range from -1 to 1
         static member random () =
             Vector2.create
@@ -183,6 +183,8 @@ module Extensions =
             | false, _    -> ValueNone
 
     module Map =
+        /// fetches key from map and applies function `f` to it. When no value for
+        /// key was added then it uses the initial value.
         let changeValue (init:'Value) (key:'Key) f map =
             Map.change key (function
                 | None   -> Some (f init)
