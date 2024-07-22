@@ -178,10 +178,10 @@ module View =
             | UI1 -> 0.6f
 
     // Constructors
-    let inline create (v:View) = v
+    let inline create (v:View) : View = v
 
     /// Generates a View
-    let fromSprite origin layer sprite = {
+    let fromSprite origin layer (sprite:Sprite) : View = {
         Sprite    = sprite
         Tint      = Color.White
         Rotation  = 0.0f<rad>
@@ -216,7 +216,7 @@ module View =
     }
 
     // Immutable Properties
-    let withOrigin name (view:View) =
+    let withOrigin name (view:View) : View =
         let width  = float32 view.Sprite.SrcRect.Width
         let height = float32 view.Sprite.SrcRect.Height
         let origin = Origin.toPosition width height name
@@ -224,24 +224,24 @@ module View =
 
     // Mutable Properties
 
-    let setScale scale (view:View) =
+    let setScale scale (view:View) : View =
         view.Scale <- scale
         view
 
-    let setRotation rot (view:View) =
+    let setRotation rot (view:View) : View =
         view.Rotation <- rot
         view
 
-    let setTint tint (view:View) =
+    let setTint tint (view:View) : View =
         view.Tint <- tint
         view
 
-    let flipHorizontal b (view:View) =
+    let flipHorizontal b (view:View) : unit =
         match b with
         | true  -> view.Effects <- SpriteEffects.FlipHorizontally
         | false -> view.Effects <- SpriteEffects.None
 
-    let show (view:View) =
+    let show (view:View) : View =
         printfn "%A" view
         view
 
@@ -429,60 +429,67 @@ module Movement =
     let withRotationPerSecond rot (mov:Movement) = { mov with Rotation  = ValueSome rot            }
 
 module Camera =
-    let virtualScale (camera:Camera) : Vector3 =
+    let inline virtualScale (camera:Camera) : Vector3 =
         let scale = float32 camera.Viewport.Width / float32 camera.VirtualWidth
         Vector3(scale,scale,1f)
 
     /// Calculates and returns the Matrix of the Camera. This ignores the Matrix field of
     /// the record. It is used to calculate the Matrix to reset the field.
     let calculateMatrix camera =
-        let origin = Origin.toPosition (float32 camera.VirtualWidth) (float32 camera.VirtualHeight) camera.Origin
-
+        // Creates the scale for the virtual resolution the game should use
         Matrix.CreateScale         (virtualScale camera)
+        // there is no camera. A camera with position 100px right, 100px top basically means
+        // that all game objects must be moved 100px to left and 100px to bottom
         * Matrix.CreateTranslation (Vector3(-camera.Position , 0f))
-        * Matrix.CreateTranslation (Vector3(-origin, 0f))
+        // Usually i assume that the origin of the camera is center. This becomes
+        // relevant with zooming. Because we want zomming to happen to the center, not TopLeft
+        // as the default is. For this to work we first need to additionally subtract the camera
+        // origin to all game objects.
+        * Matrix.CreateTranslation (-camera.Origin)
+        // Then we apply the camera zoom level
         * Matrix.CreateScale       (float32 camera.Zoom, float32 camera.Zoom, 1f)
-        * Matrix.CreateTranslation (Vector3(origin, 0f))
+        // then we finally add the camera origin back
+        * Matrix.CreateTranslation (camera.Origin)
 
-    let create (w,h) viewport = {
-        Camera.Position = Vector2.create 0f 0f
-        Zoom            = 1.0
-        Matrix          = None
-        VirtualWidth    = w
-        VirtualHeight   = h
-        Viewport        = viewport
-        Origin          = Center
-        MinZoom         = 0.03
-        MaxZoom         = 2.0
-    }
+    let create (w:int,h:int) (viewport:Viewport) : Camera = {
+            Camera.Position = Vector2.create 0f 0f
+            Zoom            = 1.0
+            Matrix          = None
+            VirtualWidth    = w
+            VirtualHeight   = h
+            Viewport        = viewport
+            Origin          = Vector3(Origin.toPosition (float32 w) (float32 h) Center, 0f)
+            MinZoom         = 0.03
+            MaxZoom         = 2.0
+        }
 
-    let withMinMaxZoom min max camera =
+    let withMinMaxZoom min max (camera:Camera) : Camera =
         { camera with MinZoom = min; MaxZoom = max; Matrix = None }
 
-    let withViewport viewport camera =
+    let withViewport viewport camera : Camera =
         { camera with Viewport = viewport; Matrix = None }
 
-    let setPosition vec camera =
+    let setPosition vec (camera:Camera) : unit =
         camera.Position <- vec
         camera.Matrix   <- None
 
-    let setZoom zoom camera =
+    let setZoom zoom (camera:Camera) : unit =
         camera.Zoom   <- clamp zoom camera.MinZoom camera.MaxZoom
         camera.Matrix <- None
 
-    let addZoom addition camera =
+    let addZoom addition (camera:Camera) : unit =
         camera.Zoom   <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom + addition)
         camera.Matrix <- None
 
-    let subtractZoom subtraction camera =
+    let subtractZoom subtraction (camera:Camera) : unit =
         camera.Zoom   <- clamp camera.MinZoom camera.MaxZoom (camera.Zoom - subtraction)
         camera.Matrix <- None
 
-    let add vec camera =
+    let add vec (camera:Camera) : unit =
         camera.Position <- camera.Position + vec
         camera.Matrix   <- None
 
-    let matrix camera =
+    let matrix (camera:Camera) : Matrix =
         match camera.Matrix with
         | Some matrix -> matrix
         | None        ->
@@ -490,11 +497,11 @@ module Camera =
             camera.Matrix <- Some matrix
             matrix
 
-    let screenToWorld position camera =
+    let screenToWorld position (camera:Camera) =
         Vector2.Transform(position, Matrix.Invert (matrix camera))
 
-    let screenPointToWorld (position:Point) camera =
+    let screenPointToWorld (position:Point) (camera:Camera) =
         Vector2.Transform(position.ToVector2(), Matrix.Invert (matrix camera))
 
-    let worldToScreen position camera =
+    let worldToScreen position (camera:Camera) =
         Vector2.Transform(position, matrix camera)

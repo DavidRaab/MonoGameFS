@@ -44,7 +44,7 @@ type Camera = {
     VirtualWidth:     int
     VirtualHeight:    int
     Viewport:         Viewport
-    Origin:           Origin
+    Origin:           Vector3
     MinZoom:          float
     MaxZoom:          float
 }
