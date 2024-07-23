@@ -172,14 +172,14 @@ module View =
     // Turns a Layer into a number. When Drawing the sprites all sprites
     // are sorted by this number. This way we can emulate layers. On the same
     // layer no drawing order can be preserved.
-    let inline layerToFloat layer =
+    let layerToFloat layer =
         match layer with
-            | BG2 -> 0.1f
-            | BG1 -> 0.2f
-            | FG2 -> 0.3f
-            | FG1 -> 0.4f
-            | UI2 -> 0.5f
-            | UI1 -> 0.6f
+            | BG2 -> 1
+            | BG1 -> 2
+            | FG2 -> 3
+            | FG1 -> 4
+            | UI2 -> 5
+            | UI1 -> 6
 
     // Constructors
     let inline create (v:View) : View = v

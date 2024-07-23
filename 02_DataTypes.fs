@@ -62,7 +62,7 @@ type View = {
     mutable Tint:     Color
     mutable Scale:    Vector2
     mutable Effects:  SpriteEffects
-    Layer:  float32
+    Layer:  int
     Origin: Vector2
 }
 

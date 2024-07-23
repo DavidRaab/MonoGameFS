@@ -56,7 +56,7 @@ module View =
                     origin          = view.Origin,
                     scale           = view.Scale * scale,
                     effects         = view.Effects,
-                    layerDepth      = view.Layer
+                    layerDepth      = 0f
                 )
 
 // Moves those who should be moved
