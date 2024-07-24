@@ -8,6 +8,7 @@ open MyGame.Entity
 open MyGame.Timer
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
+open Storage
 
 type TimeSpan = System.TimeSpan
 
@@ -20,7 +21,7 @@ module View =
         match me.Parent with
         | ValueNone        -> ValueSome (me.Position,me.Rotation,me.Scale)
         | ValueSome parent ->
-            match State.Transform.get parent with
+            match Storage.get parent State.Transform with
             | ValueNone        -> ValueNone
             | ValueSome parent ->
                 (calculateTransform parent) |> ValueOption.map (fun (pPos,pRot,pScale) ->
@@ -36,9 +37,9 @@ module View =
 
     let draw (sb:SpriteBatch) =
         let transformAndView = [|
-            for KeyValue(entity,v) in State.View.visible do
-                match State.Transform.get entity with
-                | ValueSome t -> (t,v)
+            for view in State.View.visible.Data do
+                match Storage.get view.Entity State.Transform with
+                | ValueSome t -> (t,view)
                 | ValueNone   -> ()
         |]
 
@@ -64,7 +65,7 @@ module Movement =
     let update (deltaTime:TimeSpan) =
         let fdt = float32 deltaTime.TotalSeconds
         for KeyValue(entity,mov) in State.Movement.Data do
-            entity |> State.Transform.fetch (fun t ->
+            Storage.fetch (fun t ->
                 match mov.Direction with
                 | ValueNone                        -> ()
                 | ValueSome (Relative dir)         -> Transform.addPosition (dir * fdt) t
@@ -75,7 +76,7 @@ module Movement =
                 match mov.Rotation with
                 | ValueNone     -> ()
                 | ValueSome rot -> Transform.addRotation (rot * fdt) t
-            )
+            ) entity State.Transform
 
 module Timer =
     let mutable state = ResizeArray<Timed<unit>>()
@@ -116,7 +117,7 @@ module Drawing =
         )
 
     let trackPosition (sb:SpriteBatch) (font:SpriteFont) (entity:Entity) (whereToDraw:Vector2) =
-        entity |> State.Transform.fetch (fun t ->
+        Storage.fetch (fun (t:Transform) ->
             let screen = Camera.worldToScreen t.Position State.camera
             sb.DrawString(
                 spriteFont = font,
@@ -133,7 +134,7 @@ module Drawing =
                 effects    = SpriteEffects.None,
                 layerDepth = 0f
             )
-        )
+        ) entity State.Transform
 
     let line (texture:Texture2D) (thickness:int) color (start:Vector2) (stop:Vector2) (sb:SpriteBatch) =
         let hypotenuse = (stop - start)

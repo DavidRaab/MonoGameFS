@@ -57,6 +57,7 @@ type Sprite = {
 
 /// View component. An Entity needs this component to be shown on screen
 type View = {
+    Entity: Entity
     mutable Sprite:   Sprite
     mutable Rotation: float32<rad>
     mutable Tint:     Color

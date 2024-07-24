@@ -1,6 +1,7 @@
 namespace MyGame.State
 open MyGame
 open MyGame.DataTypes
+open Storage
 
 type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
 type HashSet<'a>       = System.Collections.Generic.HashSet<'a>
@@ -60,46 +61,41 @@ type State<'Component>() =
 module State =
     let mutable camera   = Unchecked.defaultof<Camera>
     let mutable uiCamera = Unchecked.defaultof<Camera>
-    let Transform        = State<Transform>()
+    let Transform : Storage<Entity,Transform> = Storage.create ()
     let Movement         = State<Movement>()
     let Animation        = State<Animation>()
 
     // let View          = State<View>()
     module View =
-        let visible = Dictionary<Entity,View>()
-        let hidden  = Dictionary<Entity,View>()
+        let visible = Storage.create () // Dictionary<Entity,View>()
+        let hidden  = Storage.create () // Dictionary<Entity,View>()
 
         /// Removes the View for an Entity
         let inline remove (e:Entity) : unit =
-            visible.Remove(e) |> ignore
-            hidden.Remove(e)  |> ignore
+            Storage.remove e visible
+            Storage.remove e hidden
 
         /// Adds a View for an Entity
         let add (e:Entity) (isVisible:bool) (v:View) : unit =
-            let ev = visible.ContainsKey(e)
-            let eh = hidden.ContainsKey(e)
-
             if isVisible then
-                if ev then visible.[e] <- v
-                      else visible.Add(e,v)
-                if eh then hidden.Remove(e) |> ignore
+                Storage.remove e hidden
+                Storage.add    e v visible
             else
-                if ev then visible.Remove(e) |> ignore
-                if eh then hidden.[e] <- v
-                      else hidden.Add(e,v)
+                Storage.remove e visible
+                Storage.add    e v hidden
 
         /// Get visibility and View of an Entity. If no View is present returns ValueNone
         let get (e:Entity) : (bool * View) voption =
-            match visible.TryGetValue(e) with
-            | true, view -> ValueSome (true,view)
-            | false, _   ->
-                match hidden.TryGetValue(e) with
-                | true, view -> ValueSome (false,view)
-                | false, _   -> ValueNone
+            match Storage.get e visible with
+            | ValueSome view -> ValueSome (true,view)
+            | ValueNone      ->
+                match Storage.get e hidden with
+                | ValueSome view -> ValueSome (false,view)
+                | ValueNone      -> ValueNone
 
         /// Returns if Entity is Visible. Also returns false when no View was added for an Entity.
         let inline isVisible (e:Entity) =
-            visible.ContainsKey(e)
+            Storage.contains e visible
 
         /// Sets Visibility. Does nothing when no View was added for an Entity.
         let inline setVisiblity (e:Entity) (should_be_visible:bool) =
@@ -111,18 +107,18 @@ module State =
         let inline switchVisibility (e:Entity) =
             match get e with
             | ValueSome(true,view) ->
-                visible.Remove(e) |> ignore
-                hidden.Add(e,view)
+                Storage.remove e visible
+                Storage.add e view hidden
             | ValueSome(false,view) ->
-                hidden.Remove(e) |> ignore
-                visible.Add(e,view)
+                Storage.remove e hidden
+                Storage.add e view visible
             | ValueNone -> ()
 
         /// Get View, runs function on it, and stores the new View returned by it
         let inline map ([<InlineIfLambda>] f: View -> View) (e:Entity) =
             match get e with
-            | ValueSome(true, view) -> visible.[e] <- (f view)
-            | ValueSome(false,view) -> hidden.[e]  <- (f view)
+            | ValueSome(true, view) -> Storage.add e (f view) visible
+            | ValueSome(false,view) -> Storage.add e (f view) hidden
             | ValueNone             -> ()
 
         /// Get view and runs a function on it. Does nothing when no View was added for an Entity
