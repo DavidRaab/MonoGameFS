@@ -5,7 +5,6 @@ open MyGame.Components
 open MyGame.State
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-open Storage
 
 module Entity =
     let mutable private counter = 0
@@ -35,8 +34,8 @@ module Entity =
 [<AutoOpen>]
 module EntityExtension =
     type Entity with
-        member entity.addTransform t     = Storage.add entity t State.Transform
-        member entity.deleteTransform () = Storage.remove entity State.Transform
+        member entity.addTransform t     = State.Transform.add t entity
+        member entity.deleteTransform () = State.Transform.delete entity
         member entity.addView view       = State.View.add entity true view
         member entity.deleteView ()      = State.View.remove entity
         member entity.addMovement mov    = State.Movement.add mov entity

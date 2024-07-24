@@ -185,8 +185,7 @@ module View =
     let inline create (v:View) : View = v
 
     /// Generates a View
-    let fromSprite origin layer (sprite:Sprite) entity : View = {
-        Entity    = entity
+    let fromSprite origin layer (sprite:Sprite) : View = {
         Sprite    = sprite
         Tint      = Color.White
         Rotation  = 0.0f<rad>
@@ -203,8 +202,7 @@ module View =
     let fromSpriteCenter = fromSprite Center
 
     /// Generates a View from a Sheet by using the selected Sprite
-    let fromSheet layer index (sheet:Sheet) entity : View = {
-        Entity = entity
+    let fromSheet layer index (sheet:Sheet) : View = {
         Sprite =
             Array.tryItem index sheet.Sprites |> Option.defaultWith (fun _ ->
                 eprintfn "Index [%d] out of Range. Max index is [%d] at\n%s"
@@ -288,10 +286,9 @@ module Sheets =
         Map.find name sheets.Sheets
 
     /// Creates a View from the currently set sprite sheet
-    let createView layer origin (sheets:Sheets) entity : View =
+    let createView layer origin (sheets:Sheets) : View =
         let sprite = sheets.Sheets.[sheets.Default].Sprites.[0]
         View.create {
-            Entity   = entity
             Sprite   = sprite
             Rotation = 0f<rad>
             Tint     = Color.White

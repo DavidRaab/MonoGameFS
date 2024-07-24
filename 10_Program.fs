@@ -8,7 +8,6 @@ open MyGame.Timer
 open MyGame.Assets
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-open Storage
 
 // Only load the Keys -- I have my own Input Implementation on top of MonoGame
 type Key    = Input.Keys
@@ -30,7 +29,7 @@ type Model = {
 let boxes assets =
     // black box that rotates
     let boxesOrigin = Entity.init (fun e ->
-        e.addView      (View.fromSpriteCenter BG1 assets.Sprites.WhiteBox e |> View.setTint Color.Black)
+        e.addView      (View.fromSpriteCenter BG1 assets.Sprites.WhiteBox |> View.setTint Color.Black)
         e.addTransform (Transform.fromPosition 0f 0f)
         e.addMovement {
             Direction = ValueNone // ValueSome (Relative (Vector2.Right * 50f))
@@ -63,7 +62,7 @@ let boxes assets =
                     // must be computed with a matrix calculated of the parent.
                     |> Transform.withParent (ValueSome boxesOrigin)
                 )
-                box.addView      (Sheets.createView BG1 Center assets.Box box)
+                box.addView      (Sheets.createView BG1 Center assets.Box)
                 box.addAnimation (Animation.create assets.Box)
                 // box |> State.View.map (View.withOrigin Center)
                 box.addMovement {
@@ -94,8 +93,8 @@ let boxes assets =
     ))
 
     // only show every second box - 3000 out of 6000
-    //   - with parent    1450 fps
-    //   - without parent 2400 fps
+    //   - with parent    1500 fps
+    //   - without parent 2500 fps
     // let mutable switch = true
     // for box in boxes do
     //     if switch then
@@ -107,7 +106,7 @@ let boxes assets =
     //
     // All without parent
     // rendering 3000 boxes all shown                -> 2500 fps
-    // rendering 3000 boxes from 6000 (half visible) -> 1400 fps
+    // rendering 3000 boxes from 6000 (half visible) -> 2200 fps
     //
     // Calling switchVisibility has some costs as a view has to be added/removed to
     // different containers. But usually in a typical game this is not often
@@ -133,11 +132,11 @@ let initModel assets =
             Transform.fromPosition 100f 100f
             // |> Transform.setRotationVector (Vector2.Right)
         )
-        e.addView (View.fromSpriteCenter FG1 assets.Sprites.Arrow e)
+        e.addView (View.fromSpriteCenter FG1 assets.Sprites.Arrow)
         Systems.Timer.addTimer (Timer.every (sec 0.1) () (fun _ dt ->
-            Storage.fetch (fun tf ->
+            e |> State.Transform.fetch (fun tf ->
                 Transform.addRotation 0.1f<rad> tf
-            ) e State.Transform
+            )
             State ()
         ))
     )
@@ -145,7 +144,7 @@ let initModel assets =
     let knight = Entity.init (fun e ->
         e.addTransform (Transform.fromPosition 320f 200f)
         e.addView (
-            Sheets.createView FG1 Top assets.Knight e
+            Sheets.createView FG1 Top assets.Knight
             |> View.setScale (Vector2.create 2f 2f)
         )
         e.addAnimation (Animation.create assets.Knight)
@@ -158,7 +157,7 @@ let initModel assets =
             |> Transform.withParent (ValueSome knight)
         )
         e.addView (
-            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox e
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.Aqua
         )
     )
@@ -166,18 +165,18 @@ let initModel assets =
     let sun = Entity.init (fun e ->
         e.addTransform (Transform.fromPosition 200f 200f)
         e.addView (
-            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox e
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.Yellow
         )
         Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
             match state with
             | Choice1Of2 right ->
-                (e,State.Transform) ||> Storage.fetch (Transform.addPosition (Vector2.Right * 5f))
+                e |> State.Transform.fetch (Transform.addPosition (Vector2.Right * 5f))
                 if right < 20
                 then State (Choice1Of2 (right+1))
                 else State (Choice2Of2 (right-1))
             | Choice2Of2 left ->
-                (e,State.Transform) ||> Storage.fetch (Transform.addPosition (Vector2.Left * 5f))
+                e |> State.Transform.fetch (Transform.addPosition (Vector2.Left * 5f))
                 if left > 0
                 then State (Choice2Of2 (left-1))
                 else State (Choice1Of2 (left+1))
@@ -190,7 +189,7 @@ let initModel assets =
             |> Transform.withParent (ValueSome sun)
         )
         e.addView (
-            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox e
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.BlueViolet
         )
     )
@@ -201,7 +200,7 @@ let initModel assets =
             |> Transform.withParent (ValueSome planet1)
         )
         e.addView (
-            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox e
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.DarkViolet
         )
     )
@@ -212,7 +211,7 @@ let initModel assets =
             |> Transform.withParent (ValueSome planet2)
         )
         e.addView (
-            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox e
+            View.fromSpriteCenter FG1 assets.Sprites.WhiteBox
             |> View.setTint Color.Brown
         )
     )
@@ -220,9 +219,7 @@ let initModel assets =
     // Let stars rotate at 60 fps and 1° each frame
     let deg1 = Radian.fromDeg 1f<deg>
     Systems.Timer.addTimer (Timer.every (sec (1.0/60.0)) () (fun state dt ->
-        [sun;planet1;planet2;planet3] |> List.iter (fun p ->
-            Storage.fetch (Transform.addRotation deg1) p State.Transform
-        )
+        List.iter (State.Transform.fetch (Transform.addRotation deg1)) [sun;planet1;planet2;planet3]
         State ()
     ))
 
@@ -230,14 +227,14 @@ let initModel assets =
     Systems.Timer.addTimer (Timer.every (sec 0.1) (Choice1Of2 0) (fun state dt ->
         match state with
         | Choice1Of2 state ->
-            (box,State.Transform) ||> Storage.fetch (fun t ->
+            box |> State.Transform.fetch (fun t ->
                 Transform.addPosition (Vector2.create 10f 0f) t
             )
             if state < 4
             then State (Choice1Of2 (state+1))
             else State (Choice2Of2 (state+1))
         | Choice2Of2 state ->
-            (box,State.Transform) ||> Storage.fetch (fun t ->
+            box |> State.Transform.fetch (fun t ->
                 Transform.addPosition (Vector2.create -10f 0f) t
             )
             if state > -4
@@ -396,11 +393,11 @@ let fixedUpdate model (deltaTime:TimeSpan) =
             | IsCrouch       -> IsCrouch
             | IsLeft v       ->
                 model.Knight |> State.View.iter      (View.flipHorizontal true)
-                (model.Knight,State.Transform) ||> Storage.fetch (Transform.addPosition (v * 300f * fDeltaTime))
+                model.Knight |> State.Transform.fetch (Transform.addPosition (v * 300f * fDeltaTime))
                 IsLeft v
             | IsRight v     ->
                 model.Knight |> State.View.iter      (View.flipHorizontal false)
-                (model.Knight,State.Transform) ||> Storage.fetch (Transform.addPosition (v * 300f * fDeltaTime))
+                model.Knight |> State.Transform.fetch (Transform.addPosition (v * 300f * fDeltaTime))
                 IsRight v
             | IsIdle -> IsIdle
 
@@ -547,7 +544,7 @@ let draw (model:Model) (gameTime:GameTime) (game:MyGame) =
 
         sb.DrawString(
             spriteFont = game.Asset.Font.Default,
-            text       = String.Format("Visible: {0}", Storage.length State.View.visible),
+            text       = String.Format("Visible: {0}", State.View.visible.Count),
             position   = Vector2(320f, 3f),
             color      = Color.Yellow,
             rotation   = 0f,
